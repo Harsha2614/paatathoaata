@@ -2115,3 +2115,597 @@ audio:focus-visible {
     padding-right: 16px;
   }
 }
+
+/* =========================================================
+   TIME MACHINE PAGE
+   ========================================================= */
+
+.time-machine-page {
+  width: 100%;
+  min-height: calc(100vh - 80px);
+
+  background:
+    radial-gradient(
+      circle at 85% 8%,
+      rgba(199, 154, 84, 0.08),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      var(--paper) 0%,
+      var(--paper) 100%
+    );
+
+  box-sizing: border-box;
+}
+
+.time-machine-content {
+  width: min(1100px, calc(100% - 40px));
+  margin: 0 auto;
+
+  padding: 64px 0 90px;
+}
+
+
+/* =========================================================
+   PAGE HEADER
+   ========================================================= */
+
+.time-machine-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 50px;
+  margin-bottom: 38px;
+}
+
+.time-machine-page-header h1 {
+  margin: 0 0 12px;
+
+  font-family: "Fraunces", serif;
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1.05;
+
+  letter-spacing: -0.025em;
+
+  color: var(--ink);
+}
+
+.time-machine-description {
+  max-width: 650px;
+
+  margin: 0;
+
+  color: var(--ink-soft);
+
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+
+/* =========================================================
+   TIME MACHINE ICON
+   ========================================================= */
+
+.time-machine-icon {
+  position: relative;
+
+  width: 86px;
+  height: 86px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--paper-line);
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      var(--paper-raised) 55%,
+      var(--paper) 100%
+    );
+
+  box-shadow:
+    0 12px 30px rgba(33, 27, 20, 0.08),
+    inset 0 0 0 5px rgba(199, 154, 84, 0.06);
+
+  font-size: 38px;
+}
+
+.time-machine-icon::after {
+  content: "";
+
+  position: absolute;
+
+  width: 100%;
+  height: 100%;
+
+  border: 1px dashed rgba(199, 154, 84, 0.35);
+  border-radius: 50%;
+
+  transform: scale(1.12);
+}
+
+
+/* =========================================================
+   DATE CARD
+   ========================================================= */
+
+.time-machine-date-card {
+  position: relative;
+
+  padding: 34px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--paper-raised),
+      rgba(255, 255, 255, 0.45)
+    );
+
+  border: 1px solid var(--paper-line);
+  border-radius: 8px;
+
+  box-shadow:
+    0 18px 45px rgba(33, 27, 20, 0.07),
+    0 2px 5px rgba(33, 27, 20, 0.03);
+
+  overflow: hidden;
+}
+
+.time-machine-date-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 3px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--brass),
+    transparent
+  );
+}
+
+
+/* =========================================================
+   DATE HEADING
+   ========================================================= */
+
+.time-machine-date-heading {
+  display: flex;
+  align-items: center;
+
+  gap: 17px;
+
+  margin-bottom: 30px;
+}
+
+.time-machine-date-icon {
+  width: 52px;
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border: 1px solid var(--paper-line);
+  border-radius: 7px;
+
+  background: var(--paper);
+
+  color: var(--brass);
+
+  font-size: 23px;
+
+  box-shadow:
+    0 5px 14px rgba(33, 27, 20, 0.05);
+}
+
+.time-machine-date-heading h2 {
+  margin: 0 0 5px;
+
+  color: var(--ink);
+
+  font-family: "Fraunces", serif;
+  font-size: 25px;
+  font-weight: 600;
+}
+
+.time-machine-date-heading p {
+  margin: 0;
+
+  color: var(--ink-soft);
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   DATE INPUT SECTION
+   ========================================================= */
+
+.time-machine-date-input {
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.time-machine-date-input label {
+  color: var(--ink);
+
+  font-family: "IBM Plex Mono", monospace;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+
+/* =========================================================
+   DATE FIELD
+   ========================================================= */
+
+.time-machine-date-input input {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  min-height: 58px;
+
+  padding: 0 17px;
+
+  border: 1px solid var(--paper-line);
+  border-radius: 6px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--paper),
+      var(--paper-raised)
+    );
+
+  color: var(--ink);
+
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 15px;
+  font-weight: 500;
+
+  outline: none;
+
+  cursor: pointer;
+
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+
+/* Hover */
+
+.time-machine-date-input input:hover {
+  border-color: rgba(199, 154, 84, 0.65);
+
+  background: var(--paper-raised);
+
+  box-shadow:
+    0 5px 16px rgba(33, 27, 20, 0.05);
+}
+
+
+/* Focus */
+
+.time-machine-date-input input:focus {
+  border-color: var(--brass);
+
+  background: var(--paper-raised);
+
+  box-shadow:
+    0 0 0 3px rgba(199, 154, 84, 0.13),
+    0 8px 20px rgba(33, 27, 20, 0.06);
+}
+
+
+/* =========================================================
+   CHROME DATE PICKER ICON
+   ========================================================= */
+
+.time-machine-date-input input::-webkit-calendar-picker-indicator {
+  width: 20px;
+  height: 20px;
+
+  padding: 7px;
+
+  margin-left: 8px;
+
+  border-radius: 5px;
+
+  cursor: pointer;
+
+  opacity: 0.65;
+
+  transition:
+    opacity 150ms ease,
+    background 150ms ease,
+    transform 150ms ease;
+}
+
+.time-machine-date-input input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+
+  background: rgba(199, 154, 84, 0.12);
+
+  transform: scale(1.08);
+}
+
+
+/* =========================================================
+   DATE VALUE / PLACEHOLDER
+   ========================================================= */
+
+.time-machine-date-input input:invalid {
+  color: var(--ink-soft);
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+.time-machine-error {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  margin: 12px 0 0;
+  padding: 10px 12px;
+
+  border: 1px solid rgba(155, 59, 45, 0.2);
+  border-radius: 5px;
+
+  background: rgba(155, 59, 45, 0.06);
+
+  color: var(--rust) !important;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   TRAVEL BUTTON
+   ========================================================= */
+
+.time-machine-travel-button {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  margin-top: 22px;
+
+  min-height: 48px;
+
+  padding: 0 26px;
+
+  border: 1px solid var(--deck);
+  border-radius: 5px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--deck),
+      var(--deck-2)
+    );
+
+  color: var(--paper);
+
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 6px 16px rgba(33, 27, 20, 0.12);
+
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.time-machine-travel-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 22px rgba(33, 27, 20, 0.16);
+
+  background: var(--deck-2);
+}
+
+.time-machine-travel-button:active:not(:disabled) {
+  transform: translateY(0);
+
+  box-shadow:
+    0 4px 10px rgba(33, 27, 20, 0.1);
+}
+
+.time-machine-travel-button:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+
+  box-shadow: none;
+}
+
+
+/* =========================================================
+   INFORMATION CARD
+   ========================================================= */
+
+.time-machine-info-card {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 17px;
+
+  margin-top: 25px;
+
+  padding: 22px 25px;
+
+  border: 1px solid var(--paper-line);
+  border-radius: 7px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--paper),
+      var(--paper-raised)
+    );
+
+  box-shadow:
+    0 6px 18px rgba(33, 27, 20, 0.035);
+}
+
+.time-machine-info-icon {
+  flex-shrink: 0;
+
+  width: 30px;
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(199, 154, 84, 0.25);
+  border-radius: 50%;
+
+  background: rgba(199, 154, 84, 0.08);
+
+  color: var(--brass);
+
+  font-size: 16px;
+}
+
+.time-machine-info-card h3 {
+  margin: 0 0 6px;
+
+  color: var(--ink);
+
+  font-family: "Fraunces", serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.time-machine-info-card p {
+  margin: 0;
+
+  color: var(--ink-soft);
+
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .time-machine-content {
+    width: min(100% - 32px, 1100px);
+
+    padding: 42px 0 65px;
+  }
+
+  .time-machine-page-header {
+    align-items: flex-start;
+
+    gap: 25px;
+  }
+
+  .time-machine-page-header h1 {
+    font-size: 36px;
+  }
+
+  .time-machine-description {
+    font-size: 14px;
+  }
+
+  .time-machine-icon {
+    width: 64px;
+    height: 64px;
+
+    font-size: 29px;
+  }
+
+  .time-machine-date-card {
+    padding: 24px;
+  }
+}
+
+
+@media (max-width: 480px) {
+
+  .time-machine-page-header {
+    flex-direction: column;
+  }
+
+  .time-machine-icon {
+    display: none;
+  }
+
+  .time-machine-page-header h1 {
+    font-size: 32px;
+  }
+
+  .time-machine-date-card {
+    padding: 20px;
+  }
+
+  .time-machine-date-heading {
+    gap: 13px;
+  }
+
+  .time-machine-date-icon {
+    width: 45px;
+    height: 45px;
+
+    font-size: 20px;
+  }
+
+  .time-machine-date-heading h2 {
+    font-size: 21px;
+  }
+
+  .time-machine-date-input input {
+    min-height: 54px;
+  }
+
+  .time-machine-travel-button {
+    width: 100%;
+  }
+}

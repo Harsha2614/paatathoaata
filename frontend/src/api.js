@@ -59,6 +59,9 @@ export async function logout() {
 export async function getTodayGame() {
   return request("/api/game/today");
 }
+export async function getGameByDate(date) {
+  return request(`/api/game/date/${date}`);
+}
 
 
 export async function submitGuess(
@@ -162,4 +165,19 @@ export async function uploadSong({
   }
 
   return response.json();
+
+  
+}
+
+export async function scheduleDailyGame(
+  songId,
+  gameDate
+) {
+  return request("/api/admin/daily-games", {
+    method: "POST",
+    body: JSON.stringify({
+      song_id: songId,
+      game_date: gameDate,
+    }),
+  });
 }

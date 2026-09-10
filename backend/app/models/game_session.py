@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy import Boolean
 from app.core.database import Base
 
 
@@ -17,6 +17,7 @@ class GameSession(Base):
     status: Mapped[str] = mapped_column(String(20), default="PLAYING")
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    stats_eligible: Mapped[bool] = mapped_column(Boolean,default=True,nullable=False,)
 
     user = relationship("User", back_populates="sessions")
     daily_game = relationship("DailyGame", back_populates="sessions")

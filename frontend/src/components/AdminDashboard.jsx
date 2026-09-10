@@ -1,9 +1,26 @@
 import React, { useState } from "react";
-import { uploadSong, logout } from "../api";
+
+import {
+  uploadSong,
+  scheduleDailyGame,
+  logout,
+} from "../api";
+
+
+function getTodayIST() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
 
 function AdminDashboard({ user }) {
   const [title, setTitle] = useState("");
   const [movieName, setMovieName] = useState("");
+  const [gameDate, setGameDate] = useState("");
 
   const [chunks, setChunks] = useState({
     1: null,
@@ -17,6 +34,10 @@ function AdminDashboard({ user }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+
+  const today = getTodayIST();
+
+
   function handleFileChange(chunkNumber, file) {
     setChunks((previous) => ({
       ...previous,
@@ -24,31 +45,62 @@ function AdminDashboard({ user }) {
     }));
   }
 
+
   async function handleSubmit(event) {
     event.preventDefault();
 
     setMessage("");
     setError("");
 
+
+    // Validate song title
     if (!title.trim()) {
       setError("Please enter the song title.");
       return;
     }
 
+
+    // Validate movie name
     if (!movieName.trim()) {
       setError("Please enter the movie name.");
       return;
     }
 
+
+    // Validate game date
+    if (!gameDate) {
+      setError("Please select a game date.");
+      return;
+    }
+
+
+    // Prevent scheduling in the past
+    if (gameDate < today) {
+      setError(
+        "Game date cannot be earlier than today."
+      );
+      return;
+    }
+
+
+    // Validate all five chunks
     for (let i = 1; i <= 5; i++) {
       if (!chunks[i]) {
-        setError(`Please select audio for Chunk ${i}.`);
+        setError(
+          `Please select audio for Chunk ${i}.`
+        );
         return;
       }
     }
 
+
     try {
       setLoading(true);
+
+
+      // ==========================================
+      // STEP 1: CREATE SONG
+      // ==========================================
 
       const result = await uploadSong({
         title: title.trim(),
@@ -60,12 +112,30 @@ function AdminDashboard({ user }) {
         chunk5: chunks[5],
       });
 
-      setMessage(
-        `Song "${result.title}" created successfully.`
+
+      // ==========================================
+      // STEP 2: SCHEDULE SONG FOR SELECTED DATE
+      // ==========================================
+
+      await scheduleDailyGame(
+        result.id,
+        gameDate
       );
 
+
+      // ==========================================
+      // SUCCESS
+      // ==========================================
+
+      setMessage(
+        `Song "${result.title}" was created and scheduled for ${gameDate}.`
+      );
+
+
+      // Reset form
       setTitle("");
       setMovieName("");
+      setGameDate("");
 
       setChunks({
         1: null,
@@ -75,32 +145,48 @@ function AdminDashboard({ user }) {
         5: null,
       });
 
-      // Reset file inputs.
+
+      // Reset file inputs
       document
         .querySelectorAll(".audio-file-input")
         .forEach((input) => {
           input.value = "";
         });
 
+
     } catch (error) {
-      setError(error.message);
+      console.error(error);
+
+      setError(
+        error.message ||
+        "Unable to create and schedule the game."
+      );
+
     } finally {
       setLoading(false);
     }
   }
+
 
   async function handleLogout() {
     try {
       await logout();
 
       window.location.href = "/";
+
     } catch (error) {
       console.error(error);
     }
   }
 
+
   return (
     <div className="admin-page">
+
+
+      {/* ==========================================
+          ADMIN NAVBAR
+          ========================================== */}
 
       <header className="admin-navbar">
 
@@ -109,9 +195,13 @@ function AdminDashboard({ user }) {
           <span> Admin</span>
         </div>
 
+
         <div className="admin-user">
 
-          <span>{user.email}</span>
+          <span>
+            {user.email}
+          </span>
+
 
           <button onClick={handleLogout}>
             Logout
@@ -121,28 +211,52 @@ function AdminDashboard({ user }) {
 
       </header>
 
+
+
+      {/* ==========================================
+          ADMIN CONTENT
+          ========================================== */}
+
       <main className="admin-content">
 
+
         <div className="admin-heading">
-          <p className="eyebrow">Content Management</p>
-          <h1>Create Song</h1>
-          <p>
-            Add a song with exactly five audio chunks.
+
+          <p className="eyebrow">
+            Content Management
           </p>
+
+          <h1>
+            Create Song
+          </h1>
+
+          <p>
+            Add a song, upload five audio chunks,
+            and schedule its daily game date.
+          </p>
+
         </div>
+
+
 
         <form
           className="song-upload-card"
           onSubmit={handleSubmit}
         >
 
+
+          {/* ======================================
+              SONG TITLE
+              ====================================== */}
+
           <div className="form-group">
 
-            <label>
+            <label htmlFor="song-title">
               Song Title
             </label>
 
             <input
+              id="song-title"
               type="text"
               value={title}
               onChange={(event) =>
@@ -154,13 +268,20 @@ function AdminDashboard({ user }) {
 
           </div>
 
+
+
+          {/* ======================================
+              MOVIE NAME
+              ====================================== */}
+
           <div className="form-group">
 
-            <label>
+            <label htmlFor="movie-name">
               Movie Name
             </label>
 
             <input
+              id="movie-name"
               type="text"
               value={movieName}
               onChange={(event) =>
@@ -172,25 +293,68 @@ function AdminDashboard({ user }) {
 
           </div>
 
+
+
+          {/* ======================================
+              GAME DATE
+              ====================================== */}
+
+          <div className="form-group">
+
+            <label htmlFor="game-date">
+              Game Date
+            </label>
+
+            <input
+              id="game-date"
+              type="date"
+              value={gameDate}
+              min={today}
+              onChange={(event) =>
+                setGameDate(event.target.value)
+              }
+              required
+            />
+
+            <small>
+              Select the date when this song should
+              be used as the daily game.
+            </small>
+
+          </div>
+
+
+
+          {/* ======================================
+              AUDIO CHUNKS
+              ====================================== */}
+
           <div className="chunks-section">
 
-            <h2>Audio Chunks</h2>
+            <h2>
+              Audio Chunks
+            </h2>
 
             <p>
-              Upload exactly five different audio clips.
+              Upload exactly five different
+              audio clips.
             </p>
+
 
             <div className="chunk-grid">
 
               {[1, 2, 3, 4, 5].map((number) => (
+
                 <div
                   className="chunk-upload"
                   key={number}
                 >
 
+
                   <div className="chunk-number">
                     {number}
                   </div>
+
 
                   <div className="chunk-info">
 
@@ -205,6 +369,7 @@ function AdminDashboard({ user }) {
                     </span>
 
                   </div>
+
 
                   <label className="file-button">
 
@@ -224,12 +389,20 @@ function AdminDashboard({ user }) {
 
                   </label>
 
+
                 </div>
+
               ))}
 
             </div>
 
           </div>
+
+
+
+          {/* ======================================
+              ERROR
+              ====================================== */}
 
           {error && (
             <div className="admin-error">
@@ -237,21 +410,36 @@ function AdminDashboard({ user }) {
             </div>
           )}
 
+
+
+          {/* ======================================
+              SUCCESS
+              ====================================== */}
+
           {message && (
             <div className="admin-success">
               {message}
             </div>
           )}
 
+
+
+          {/* ======================================
+              SUBMIT
+              ====================================== */}
+
           <button
             className="create-song-button"
             type="submit"
             disabled={loading}
           >
+
             {loading
-              ? "Uploading..."
-              : "Create Song"}
+              ? "Creating and scheduling..."
+              : "Create & Schedule Game"}
+
           </button>
+
 
         </form>
 
@@ -260,5 +448,6 @@ function AdminDashboard({ user }) {
     </div>
   );
 }
+
 
 export default AdminDashboard;

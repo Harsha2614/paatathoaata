@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone , date
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -146,6 +146,7 @@ def get_today_game(
             attempts_used=0,
             score=0,
             status="PLAYING",
+            stats_eligible=True,
             started_at=datetime.now(timezone.utc),
         )
 
@@ -493,4 +494,115 @@ def guess(
         ),
 
         revealed_clips=revealed_clips,
+    )
+
+@router.get(
+    "/date/{game_date}",
+    response_model=GameResponse,
+)
+def get_game_by_date(
+    game_date: date,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    today = datetime.now(IST).date()
+
+    if game_date >= today:
+        raise HTTPException(
+            status_code=400,
+            detail="Only previous games are available in Time Machine",
+        )
+
+    game = (
+        db.query(DailyGame)
+        .filter(DailyGame.game_date == game_date)
+        .first()
+    )
+
+    if not game:
+        raise HTTPException(
+            status_code=404,
+            detail="No game was scheduled for this date",
+        )
+
+    session = (
+        db.query(GameSession)
+        .filter(
+            GameSession.user_id == current_user.id,
+            GameSession.daily_game_id == game.id,
+        )
+        .first()
+    )
+
+    if not session:
+        session = GameSession(
+            user_id=current_user.id,
+            daily_game_id=game.id,
+            current_chunk=1,
+            attempts_used=0,
+            score=0,
+            status="PLAYING",
+            stats_eligible=False,
+            started_at=datetime.now(timezone.utc),
+        )
+
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+
+    revealed_clips = get_revealed_clips(
+        db=db,
+        song_id=game.song_id,
+        max_chunk=(
+            5
+            if session.status != "PLAYING"
+            else session.current_chunk
+        ),
+    )
+
+    if session.status != "PLAYING":
+        return GameResponse(
+            game_session_id=session.id,
+            chunk_number=session.current_chunk,
+            audio_url=(
+                revealed_clips[0]["audio_url"]
+                if revealed_clips
+                else ""
+            ),
+            revealed_clips=revealed_clips,
+            attempts_used=session.attempts_used,
+            attempts_remaining=0,
+            status=session.status,
+            total_score=session.score,
+            answer=game.song.movie_name,
+            game_date=str(game.game_date),
+            is_time_machine=True,
+        )
+
+    clip = (
+        db.query(SongClip)
+        .filter(
+            SongClip.song_id == game.song_id,
+            SongClip.chunk_number == session.current_chunk,
+        )
+        .first()
+    )
+
+    if not clip:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Missing chunk {session.current_chunk}",
+        )
+
+    return GameResponse(
+        game_session_id=session.id,
+        chunk_number=session.current_chunk,
+        audio_url=build_audio_url(clip.audio_url),
+        revealed_clips=revealed_clips,
+        attempts_used=session.attempts_used,
+        attempts_remaining=MAX_ATTEMPTS - session.attempts_used,
+        status=session.status,
+        total_score=session.score,
+        game_date=str(game.game_date),
+        is_time_machine=True,
     )

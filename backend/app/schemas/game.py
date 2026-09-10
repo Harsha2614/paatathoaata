@@ -26,6 +26,8 @@ class GameResponse(BaseModel):
     # Today's game date
     game_date: str | None = None
 
+    is_time_machine: bool = False
+
 
 class GuessRequest(BaseModel):
     game_session_id: int

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import TimeMachine from "./components/TimeMachine";
 import {
   initializeAnonymousPlayer,
   getCurrentUser,
@@ -34,6 +34,8 @@ function PlayerApp() {
   const [page, setPage] = useState("game");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showTimeMachine, setShowTimeMachine] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
     initializePlayer();
@@ -42,9 +44,9 @@ function PlayerApp() {
   async function initializePlayer() {
     try {
       setLoading(true);
+      setError("");
 
-      const player =
-        await initializeAnonymousPlayer();
+      const player = await initializeAnonymousPlayer();
 
       setUser(player);
 
@@ -69,7 +71,6 @@ function PlayerApp() {
   if (error || !user) {
     return (
       <div className="app-loading">
-
         <h1>GuessTheSong</h1>
 
         <p>
@@ -79,7 +80,6 @@ function PlayerApp() {
         <button onClick={initializePlayer}>
           Try Again
         </button>
-
       </div>
     );
   }
@@ -95,41 +95,71 @@ function PlayerApp() {
 
         <nav>
 
-          <button
-            className={
-              page === "game"
-                ? "active"
-                : ""
-            }
-            onClick={() => setPage("game")}
-          >
-            🎵 Game
-          </button>
+  <button
+    className={page === "game" ? "active" : ""}
+    onClick={() => {
+      setSelectedDate(null);
+      setPage("game");
+    }}
+  >
+    🎵 Game
+  </button>
 
-          <button
-            className={
-              page === "dashboard"
-                ? "active"
-                : ""
-            }
-            onClick={() => setPage("dashboard")}
-          >
-            📊 Stats
-          </button>
+  <button
+    className={page === "dashboard" ? "active" : ""}
+    onClick={() => {
+      setSelectedDate(null);
+      setPage("dashboard");
+    }}
+  >
+    📊 Stats
+  </button>
 
-        </nav>
+  <button
+    className={page === "time-machine" ? "active" : ""}
+    onClick={() => {
+      setSelectedDate(null);
+      setPage("time-machine");
+    }}
+  >
+    🕘 Time Machine
+  </button>
+
+</nav>
 
       </header>
 
-      <main>
+  <main>
 
-        {page === "game" && <Game />}
+  {page === "game" && (
+    <Game selectedDate={selectedDate} />
+  )}
 
-        {page === "dashboard" && (
-          <Dashboard />
-        )}
+  {page === "dashboard" && (
+    <Dashboard />
+  )}
 
-      </main>
+  {page === "time-machine" && (
+    <TimeMachine
+      onSelectDate={(date) => {
+        setSelectedDate(date);
+        setPage("game");
+      }}
+    />
+  )}
+
+</main>
+
+      {showTimeMachine && (
+        <TimeMachine
+          onClose={() => setShowTimeMachine(false)}
+          onSelectDate={(date) => {
+            setSelectedDate(date);
+            setPage("game");
+            setShowTimeMachine(false);
+          }}
+        />
+      )}
 
     </div>
   );

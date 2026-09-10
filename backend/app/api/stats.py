@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.attempt import Attempt
 from app.models.daily_game import DailyGame
 from app.models.game_session import GameSession
 from app.models.user import User
@@ -32,6 +31,7 @@ def my_stats(
         .filter(
             GameSession.user_id == current_user.id,
             GameSession.status.in_(["WON", "LOST"]),
+            GameSession.stats_eligible.is_(True),
         )
         .all()
     )
@@ -71,6 +71,7 @@ def my_stats(
         .filter(
             GameSession.user_id == current_user.id,
             GameSession.status == "WON",
+            GameSession.stats_eligible.is_(True),
         )
         .all()
     )
@@ -105,6 +106,7 @@ def stats_history(
         .filter(
             GameSession.user_id == current_user.id,
             GameSession.status.in_(["WON", "LOST"]),
+            GameSession.stats_eligible.is_(True),
         )
         .order_by(DailyGame.game_date.asc())
         .all()
@@ -134,6 +136,7 @@ def guess_distribution(
         .filter(
             GameSession.user_id == current_user.id,
             GameSession.status == "WON",
+            GameSession.stats_eligible.is_(True),
         )
         .all()
     )

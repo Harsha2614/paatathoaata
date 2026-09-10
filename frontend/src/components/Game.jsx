@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getTodayGame, submitGuess } from "../api";
+import {getTodayGame,getGameByDate,submitGuess } from "../api";
 
 const SCORE_BY_ATTEMPT = {
   1: 100,
@@ -18,30 +18,30 @@ function getCurrentDate() {
   });
 }
 
-function Game() {
-  const [game, setGame] = useState(null);
-  const [guess, setGuess] = useState("");
+function Game({ selectedDate }) {
+   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [guess, setGuess] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     loadGame();
-  }, []);
+  }, [selectedDate]);
 
   async function loadGame() {
     try {
       setLoading(true);
       setError("");
 
-      const data = await getTodayGame();
-
-      console.log("TODAY GAME:", data);
+      const data = selectedDate
+        ? await getGameByDate(selectedDate)
+        : await getTodayGame();
 
       setGame(data);
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
+    } catch (error) {
+      console.error(error);
+      setError(error.message || "Unable to load the game.");
     } finally {
       setLoading(false);
     }
@@ -118,7 +118,11 @@ function Game() {
     return (
       <div className="game-page">
         <div className="game-card">
-          <p>Loading today's game...</p>
+          <p>
+          {selectedDate
+            ? "Loading historical game..."
+            : "Loading today's game..."}
+        </p>
         </div>
       </div>
     );
@@ -181,7 +185,11 @@ function Game() {
    * The backend currently doesn't send game_date.
    * Use the current date in IST.
    */
-  const gameDate = getCurrentDate();
+  const gameDate =
+  game.game_date ?? getCurrentDate();
+
+const isTimeMachine =
+  game.is_time_machine ?? Boolean(selectedDate);
 
   /*
    * All revealed clips remain available.
@@ -210,10 +218,12 @@ function Game() {
 
           <div>
             <p className="eyebrow">
-              Today's Game
-            </p>
+            {isTimeMachine
+              ? `Time Machine · ${gameDate}`
+              : "Today's Game"}
+          </p>
 
-            <h1>GuessTheSong</h1>
+          <h1>GuessTheSong</h1>
           </div>
 
           <div className="attempt-counter">
@@ -227,6 +237,19 @@ function Game() {
           </div>
 
         </div>
+
+        {isTimeMachine && (
+            <div className="time-machine-banner">
+              <div>
+                 <strong>Time Machine</strong>
+              </div>
+
+              <span>
+                You are replaying the game from {gameDate}.
+                This game does not affect your statistics or streak.
+              </span>
+            </div>
+          )}
 
 
         {/* =====================================================
@@ -253,7 +276,9 @@ function Game() {
                 </h2>
 
                 <p>
-                  You guessed today's movie!
+                  {isTimeMachine
+                    ? `You guessed the movie from ${gameDate}!`
+                    : "You guessed today's movie!"}
                 </p>
 
                 <div className="result-answer">
