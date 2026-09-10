@@ -464,7 +464,7 @@ function Game({ selectedDate }) {
           </div>
 
           <h1 className="font-['Georgia'] text-[28px] font-bold text-[#e4a32d]">
-            ABSOLUTE CINEMA
+            CINE CLUE
           </h1>
 
           <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-[#68645f]">
@@ -606,7 +606,7 @@ function Game({ selectedDate }) {
 
 
           <h1 className="mt-2 font-['Georgia'] text-[54px] font-bold leading-none tracking-[-0.045em] text-[#e5a32d] max-[700px]:text-[39px]">
-            ABSOLUTE CINEMA
+            CINE CLUE
           </h1>
 
 
@@ -1955,7 +1955,7 @@ function ShareResult({
   totalScore,
 }) {
   const text =
-    `Absolute Cinema\n` +
+    `CINE CLUE\n` +
     `${attemptsUsed}/5 guesses · ${totalScore} points\n` +
     `Can you beat me?`;
 
@@ -1979,7 +1979,7 @@ function ShareResult({
 
       try {
         await navigator.share({
-          title: "Absolute Cinema",
+          title: "CINE CLUE",
           text,
         });
 

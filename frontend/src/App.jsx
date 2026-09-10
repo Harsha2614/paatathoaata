@@ -296,7 +296,7 @@ function PlayerApp() {
 
 
           <h1 className="font-['Georgia'] text-[30px] font-bold tracking-[-0.02em] text-[#e5a32c]">
-            ABSOLUTE CINEMA
+            Cine Clue
           </h1>
 
 
@@ -339,7 +339,7 @@ function PlayerApp() {
 
 
           <h1 className="font-['Georgia'] text-[27px] font-bold text-[#e6a52e]">
-            ABSOLUTE CINEMA
+            CINE CLUE
           </h1>
 
 
@@ -392,19 +392,23 @@ function PlayerApp() {
             aria-label="Go to home"
             className="flex items-center gap-2 border-0 bg-transparent p-0"
           >
-
             <Clapperboard
               size={19}
               strokeWidth={1.6}
-              className="text-[#c88d25]"
+              className="shrink-0 text-[#c88d25]"
             />
 
+            <div className="flex flex-col items-center leading-none">
+              <span className="font-['Georgia'] text-[22px] font-bold tracking-[0.06em] text-[#dca02d] max-[600px]:text-[18px]">
+                CINE CLUE
+              </span>
 
-            <span className="font-['Georgia'] text-[22px] font-bold tracking-[0.06em] text-[#dca02d] max-[600px]:text-[18px]">
-              ABSOLUTE CINEMA
-            </span>
-
+              <span className="mt-[3px] font-['Georgia'] text-[8px] font-bold tracking-[0.06em] text-[#dca02d] max-[600px]:text-[8px]">
+                Listen. Guess. Win.
+              </span>
+            </div>
           </button>
+          
 
 
           {/* =================================================
@@ -634,7 +638,8 @@ function PlayerApp() {
             />
 
             <span>
-              ABSOLUTE CINEMA
+              CINE CLUE
+              
             </span>
 
             <span className="text-[#403a32]">
@@ -701,7 +706,7 @@ function PlayerApp() {
           {/* COPYRIGHT */}
 
           <p className="mt-5 text-[10px] text-[#4e4a45]">
-            © 2026 Absolute Cinema. All rights reserved.
+            © 2026 CINE CLUE. All rights reserved.
           </p>
 
         </div>
@@ -779,7 +784,7 @@ function AdminApp() {
 
 
           <h1 className="font-['Georgia'] text-[28px] font-bold text-[#e5a32c]">
-            ABSOLUTE CINEMA
+            CINE CLUE
           </h1>
 
 
