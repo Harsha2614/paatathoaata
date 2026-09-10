@@ -1,4 +1,17 @@
 import React, { useState } from "react";
+import CalendarPicker from "./CalendarPicker";
+
+import {
+  Clock3,
+  CalendarDays,
+  Play,
+  Info,
+} from "lucide-react";
+
+
+/* =========================================================
+   DATE HELPERS
+========================================================= */
 
 function getTodayIST() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -9,101 +22,170 @@ function getTodayIST() {
   }).format(new Date());
 }
 
+
 function getYesterdayIST() {
   const today = getTodayIST();
 
-  const [year, month, day] = today
-    .split("-")
-    .map(Number);
+  const [year, month, day] =
+    today.split("-").map(Number);
 
   const yesterday = new Date(
-    Date.UTC(year, month - 1, day - 1)
+    Date.UTC(
+      year,
+      month - 1,
+      day - 1
+    )
   );
 
-  return yesterday.toISOString().split("T")[0];
+  return yesterday
+    .toISOString()
+    .split("T")[0];
 }
 
-function TimeMachine({ onSelectDate }) {
-  const [date, setDate] = useState("");
-  const [error, setError] = useState("");
 
-  const yesterday = getYesterdayIST();
+/* =========================================================
+   TIME MACHINE
+========================================================= */
+
+function TimeMachine({ onSelectDate }) {
+  const [date, setDate] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const yesterday =
+    getYesterdayIST();
+
+
+  /* =========================================================
+     DATE CHANGE
+  ========================================================= */
+
+  function handleDateChange(selectedDate) {
+    setDate(selectedDate);
+    setError("");
+  }
+
+
+  /* =========================================================
+     SUBMIT
+  ========================================================= */
 
   function handleSubmit(event) {
     event.preventDefault();
 
     if (!date) {
-      setError("Please select a previous date.");
+      setError(
+        "Please select a previous date."
+      );
       return;
     }
 
     onSelectDate(date);
   }
 
+
   return (
-    <div className="min-h-[calc(100vh-72px)] w-full">
-      <div className="mx-auto w-full max-w-[1100px] px-6 pb-24 pt-16 max-[700px]:px-4 max-[700px]:pb-16 max-[700px]:pt-12">
+    <div className="min-h-[calc(100vh-72px)] w-full bg-[#080808]">
 
-        {/* =================================================
-            PAGE HEADER
-            ================================================= */}
+      <div className="mx-auto w-full max-w-[1100px] px-6 pb-24 pt-12 max-[700px]:px-4 max-[700px]:pb-16 max-[700px]:pt-10">
 
-        <div className="mb-10 flex items-center justify-between gap-12 max-[700px]:items-start max-[700px]:gap-5">
+
+        {/* =====================================================
+            HEADER
+        ===================================================== */}
+
+        <div className="mb-8 flex items-center justify-between gap-10 max-[700px]:items-start">
 
           <div>
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#a78bfa]">
-              Time Machine
-            </p>
 
-            <h1 className="m-0 font-['Space_Grotesk'] text-[48px] font-bold leading-[1.05] tracking-[-0.055em] text-white max-[700px]:text-[34px]">
-              Replay a Previous Game
+            {/* REPLAY MODE */}
+
+            <div className="mb-3 flex items-center gap-2">
+
+              <Clock3
+                size={17}
+                strokeWidth={1.7}
+                className="text-[#d99a22]"
+              />
+
+              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8c8a87]">
+                Replay Mode
+              </span>
+
+            </div>
+
+
+            {/* TITLE */}
+
+            <h1 className="m-0 font-['Georgia'] text-[46px] font-bold leading-[1.05] tracking-[-0.035em] text-[#e9a82f] max-[700px]:text-[36px]">
+              TIME MACHINE
             </h1>
 
-            <p className="mt-3 max-w-[650px] text-[15px] leading-7 text-[#a4a4b2]">
-              Missed a daily game? Travel back
-              and play a previous game.
+
+            <p className="mt-2 text-[14px] text-[#85817b]">
+              Replay any previous daily challenge
             </p>
+
           </div>
 
 
-          {/* CLOCK */}
+          {/* =================================================
+              CLOCK
+          ================================================= */}
 
-          <div className="relative flex h-[86px] w-[86px] shrink-0 items-center justify-center rounded-full border border-[#ffffff17] bg-white/[0.045] text-[38px] shadow-[0_12px_30px_rgba(0,0,0,0.25)] max-[700px]:h-[60px] max-[700px]:w-[60px] max-[700px]:text-[27px]">
-            🕘
+          <div className="relative flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full border border-[#8e611c]/60 bg-[#141414] text-[#d99a22] shadow-[0_0_35px_rgba(196,135,30,0.08)] max-[700px]:h-[62px] max-[700px]:w-[62px]">
 
-            <div className="pointer-events-none absolute inset-0 scale-[1.12] rounded-full border border-dashed border-[#8b5cf655]" />
+            <Clock3
+              size={34}
+              strokeWidth={1.35}
+              className="max-[700px]:h-[27px] max-[700px]:w-[27px]"
+            />
+
+            <div className="pointer-events-none absolute inset-[-6px] rounded-full border border-dashed border-[#8e611c]/45" />
+
           </div>
 
         </div>
 
 
-        {/* =================================================
+        {/* =====================================================
             DATE CARD
-            ================================================= */}
+        ===================================================== */}
 
-        <section className="relative overflow-hidden rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-[34px] shadow-[0_25px_70px_rgba(0,0,0,0.25)] max-[700px]:p-[22px]">
+        <section className="relative overflow-visible rounded-[16px] border border-[#5a4424]/70 bg-[#151515] p-6 shadow-[0_25px_70px_rgba(0,0,0,0.45)] max-[700px]:p-5">
 
-          {/* TOP ACCENT */}
+          {/* GOLD TOP LINE */}
 
-          <div className="absolute left-1/4 right-1/4 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#8b5cf6] to-transparent" />
+          <div className="absolute left-1/4 right-1/4 top-0 h-px bg-gradient-to-r from-transparent via-[#c58b28] to-transparent" />
 
 
-          {/* CARD HEADER */}
+          {/* =================================================
+              CARD HEADER
+          ================================================= */}
 
-          <div className="mb-8 flex items-center gap-4">
+          <div className="mb-6 flex items-center gap-3">
 
-            <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[14px] border border-white/[0.09] bg-white/[0.055] text-[23px]">
-              📅
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-[#6b4b1b] bg-[#1d1a16]">
+
+              <CalendarDays
+                size={20}
+                strokeWidth={1.6}
+                className="text-[#d99a22]"
+              />
+
             </div>
+
 
             <div>
 
-              <h2 className="m-0 font-['Space_Grotesk'] text-[24px] font-semibold tracking-[-0.02em] text-white">
-                Select a Previous Date
+              <h2 className="m-0 font-['Georgia'] text-[21px] font-bold text-[#eee6d8]">
+                SELECT DATE
               </h2>
 
-              <p className="mt-1 text-[13px] text-[#696977]">
-                Choose any daily game from the past.
+              <p className="mt-1 text-[12px] text-[#77736e]">
+                Choose a previous daily game to replay.
               </p>
 
             </div>
@@ -113,88 +195,129 @@ function TimeMachine({ onSelectDate }) {
 
           {/* =================================================
               FORM
-              ================================================= */}
+          ================================================= */}
 
           <form onSubmit={handleSubmit}>
 
-            <div className="flex flex-col gap-2">
-
-              <label
-                htmlFor="time-machine-date"
-                className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#a4a4b2]"
-              >
-                Game Date
-              </label>
-
-              <input
-                id="time-machine-date"
-                type="date"
-                value={date}
-                max={yesterday}
-                onChange={(event) => {
-                  setDate(event.target.value);
-                  setError("");
-                }}
-                className="min-h-[58px] w-full cursor-pointer rounded-[12px] border border-white/[0.09] bg-white/[0.045] px-[17px] font-['DM_Sans'] text-[15px] text-white outline-none transition duration-200 hover:border-[#8b5cf699] focus:border-[#8b5cf6] focus:ring-4 focus:ring-[#8b5cf61a]"
-              />
-
-            </div>
+            <CalendarPicker
+              value={date}
+              onChange={handleDateChange}
+              maxDate={yesterday}
+              label="Game Date"
+              helperText="Choose a previous daily game to replay."
+            />
 
 
-            {/* ERROR */}
+            {/* =================================================
+                ERROR
+            ================================================= */}
 
             {error && (
-              <div className="mt-3 rounded-[10px] border border-red-400/20 bg-red-400/[0.07] px-3 py-2.5 text-[13px] text-red-300">
-                {error}
+              <div className="mt-4 flex max-w-[460px] items-center gap-2 rounded-[9px] border border-red-500/20 bg-red-500/[0.06] px-3 py-2.5 text-[12px] text-red-300">
+
+                <Info
+                  size={14}
+                  strokeWidth={1.7}
+                  className="shrink-0"
+                />
+
+                <span>
+                  {error}
+                </span>
+
               </div>
             )}
 
 
-            {/* TRAVEL BUTTON */}
+            {/* =================================================
+                PLAY BUTTON
+            ================================================= */}
 
             <button
               type="submit"
               disabled={!date}
-              className="mt-6 inline-flex min-h-[50px] items-center justify-center gap-2 rounded-[13px] border-0 bg-gradient-to-r from-[#8b5cf6] to-[#3b82f6] px-7 text-[14px] font-bold text-white shadow-[0_12px_30px_rgba(99,102,241,0.25)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(99,102,241,0.35)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-[0_12px_30px_rgba(99,102,241,0.25)]"
+              className="mt-6 inline-flex min-h-[48px] min-w-[220px] items-center justify-center gap-2 rounded-[10px] border border-[#8f641d] bg-gradient-to-b from-[#dba13a] to-[#a87320] px-7 text-[13px] font-bold uppercase tracking-[0.08em] text-[#120f0a] shadow-[0_10px_30px_rgba(180,125,30,0.18)] transition duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_15px_35px_rgba(180,125,30,0.25)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:translate-y-0"
             >
-              🕘 Travel Back
+
+              <Play
+                size={15}
+                strokeWidth={2}
+                fill="currentColor"
+                className="ml-[1px]"
+              />
+
+              PLAY THIS DAY
+
             </button>
 
           </form>
 
+
+          {/* =================================================
+              BOTTOM NOTE
+          ================================================= */}
+
+          <p className="mt-4 flex items-center gap-2 text-[11px] text-[#68645f]">
+
+            <Clock3
+              size={12}
+              strokeWidth={1.6}
+              className="shrink-0 text-[#806126]"
+            />
+
+            <span>
+              Time Machine results are tracked separately from your daily streak.
+            </span>
+
+          </p>
+
         </section>
 
 
-        {/* =================================================
-            INFORMATION CARD
-            ================================================= */}
+        {/* =====================================================
+            INFORMATION
+        ===================================================== */}
 
-        <section className="mt-6 flex items-start gap-4 rounded-[18px] border border-white/[0.09] bg-white/[0.035] px-6 py-5 max-[700px]:px-5">
+        <section className="mt-5 flex items-start gap-3 rounded-[14px] border border-[#30291f] bg-[#111111] px-5 py-4">
 
-          <div className="shrink-0 text-[20px] text-[#a78bfa]">
-            ⓘ
+          {/* INFO ICON */}
+
+          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#72501b]">
+
+            <Info
+              size={14}
+              strokeWidth={1.8}
+              className="text-[#d99a22]"
+            />
+
           </div>
+
+
+          {/* INFORMATION TEXT */}
 
           <div>
 
-            <h3 className="m-0 font-['Space_Grotesk'] text-[18px] font-semibold text-white">
+            <h3 className="m-0 font-['Georgia'] text-[16px] font-bold text-[#e7dfd1]">
               About Time Machine
             </h3>
 
-            <p className="mt-1.5 text-[13px] leading-6 text-[#a4a4b2]">
+
+            <p className="mt-1 text-[12px] leading-5 text-[#77736e]">
               Replay games you missed in the past.
               Time Machine games do not affect your
-              statistics, streak, history, or score
-              distribution.
+              statistics, streak, history, or score distribution.
             </p>
 
           </div>
 
         </section>
 
+
       </div>
+
     </div>
   );
 }
+
 
 export default TimeMachine;

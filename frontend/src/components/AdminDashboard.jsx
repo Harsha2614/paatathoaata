@@ -6,6 +6,8 @@ import {
   logout,
 } from "../api";
 
+import CalendarPicker from "./CalendarPicker";
+
 
 function getTodayIST() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -51,44 +53,48 @@ function AdminDashboard({ user }) {
     setMessage("");
     setError("");
 
-    // Validate song title
+
     if (!title.trim()) {
       setError("Please enter the song title.");
       return;
     }
 
-    // Validate movie name
+
     if (!movieName.trim()) {
       setError("Please enter the movie name.");
       return;
     }
 
-    // Validate game date
+
     if (!gameDate) {
       setError("Please select a game date.");
       return;
     }
 
-    // Prevent scheduling in the past
+
     if (gameDate < today) {
-      setError("Game date cannot be earlier than today.");
+      setError(
+        "Game date cannot be earlier than today."
+      );
       return;
     }
 
-    // Validate all five chunks
+
     for (let i = 1; i <= 5; i++) {
       if (!chunks[i]) {
-        setError(`Please select audio for Chunk ${i}.`);
+        setError(
+          `Please select audio for Chunk ${i}.`
+        );
         return;
       }
     }
 
+
     try {
       setLoading(true);
 
-      // ==========================================
-      // STEP 1: CREATE SONG
-      // ==========================================
+
+      // CREATE SONG
 
       const result = await uploadSong({
         title: title.trim(),
@@ -101,9 +107,7 @@ function AdminDashboard({ user }) {
       });
 
 
-      // ==========================================
-      // STEP 2: SCHEDULE SONG
-      // ==========================================
+      // SCHEDULE GAME
 
       await scheduleDailyGame(
         result.id,
@@ -111,15 +115,15 @@ function AdminDashboard({ user }) {
       );
 
 
-      // ==========================================
       // SUCCESS
-      // ==========================================
 
       setMessage(
         `Song "${result.title}" was created and scheduled for ${gameDate}.`
       );
 
-      // Reset form
+
+      // RESET
+
       setTitle("");
       setMovieName("");
       setGameDate("");
@@ -133,12 +137,12 @@ function AdminDashboard({ user }) {
       });
 
 
-      // Reset file inputs
       document
         .querySelectorAll(".audio-file-input")
         .forEach((input) => {
           input.value = "";
         });
+
 
     } catch (error) {
       console.error(error);
@@ -170,26 +174,22 @@ function AdminDashboard({ user }) {
     <div className="min-h-screen w-full bg-[#08080d] text-white">
 
 
-      {/* ==========================================
-          ADMIN NAVBAR
-          ========================================== */}
+      {/* NAVBAR */}
 
       <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#08080d]/90 backdrop-blur-xl">
 
         <div className="mx-auto flex h-[72px] w-full max-w-[1200px] items-center justify-between px-6 max-[600px]:px-4">
 
-          {/* Logo */}
-
           <div className="font-['Space_Grotesk'] text-[20px] font-bold tracking-[-0.04em]">
+
             GuessTheSong
 
             <span className="ml-2 text-[13px] font-medium tracking-normal text-[#a78bfa]">
               Admin
             </span>
+
           </div>
 
-
-          {/* User */}
 
           <div className="flex items-center gap-4 max-[600px]:gap-2">
 
@@ -211,16 +211,12 @@ function AdminDashboard({ user }) {
       </header>
 
 
-      {/* ==========================================
-          ADMIN CONTENT
-          ========================================== */}
+      {/* CONTENT */}
 
       <main className="mx-auto w-full max-w-[1000px] px-6 pb-24 pt-14 max-[600px]:px-4 max-[600px]:pt-10">
 
 
-        {/* ==========================================
-            HEADING
-            ========================================== */}
+        {/* HEADING */}
 
         <div className="mb-10">
 
@@ -240,28 +236,19 @@ function AdminDashboard({ user }) {
         </div>
 
 
-        {/* ==========================================
-            FORM CARD
-            ========================================== */}
+        {/* FORM */}
 
         <form
           onSubmit={handleSubmit}
           className="overflow-hidden rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-8 shadow-[0_25px_70px_rgba(0,0,0,0.25)] max-[600px]:p-5"
         >
 
-          {/* Top accent */}
-
           <div className="relative -mx-8 -mt-8 mb-8 h-[2px] bg-gradient-to-r from-transparent via-[#8b5cf6] to-transparent max-[600px]:-mx-5 max-[600px]:-mt-5" />
 
 
-          {/* ======================================
-              SONG DETAILS
-              ====================================== */}
+          {/* SONG DETAILS */}
 
           <div className="grid grid-cols-2 gap-5 max-[700px]:grid-cols-1">
-
-
-            {/* Song Title */}
 
             <div className="flex flex-col gap-2">
 
@@ -287,8 +274,6 @@ function AdminDashboard({ user }) {
             </div>
 
 
-            {/* Movie Name */}
-
             <div className="flex flex-col gap-2">
 
               <label
@@ -312,52 +297,31 @@ function AdminDashboard({ user }) {
 
             </div>
 
+          </div>
+
+
+          {/* GAME DATE */}
+
+          <div className="mt-7">
+
+            <CalendarPicker
+                value={gameDate}
+                onChange={setGameDate}
+                minDate={today}
+                label="Game Date"
+                helperText="Choose when this song should become the daily game."
+              />
 
           </div>
 
 
-          {/* ======================================
-              GAME DATE
-              ====================================== */}
-
-          <div className="mt-6 flex flex-col gap-2">
-
-            <label
-              htmlFor="game-date"
-              className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#a4a4b2]"
-            >
-              Game Date
-            </label>
-
-            <input
-              id="game-date"
-              type="date"
-              value={gameDate}
-              min={today}
-              onChange={(event) =>
-                setGameDate(event.target.value)
-              }
-              required
-              className="min-h-[52px] w-full rounded-[12px] border border-white/[0.09] bg-white/[0.045] px-4 text-[14px] text-white outline-none transition duration-200 hover:border-white/[0.15] focus:border-[#8b5cf6] focus:bg-white/[0.06] focus:ring-4 focus:ring-[#8b5cf6]/10"
-            />
-
-            <p className="m-0 text-[12px] leading-5 text-[#696977]">
-              Select the date when this song should be
-              used as the daily game.
-            </p>
-
-          </div>
-
-
-          {/* ======================================
-              AUDIO CHUNKS
-              ====================================== */}
+          {/* AUDIO CHUNKS */}
 
           <div className="mt-10 border-t border-white/[0.07] pt-8">
 
             <div className="mb-6">
 
-              <h2 className="m-0 font-['Space_Grotesk'] text-[24px] font-semibold tracking-[-0.025em] text-white">
+              <h2 className="font-['Space_Grotesk'] text-[24px] font-semibold tracking-[-0.025em] text-white">
                 Audio Chunks
               </h2>
 
@@ -368,8 +332,6 @@ function AdminDashboard({ user }) {
             </div>
 
 
-            {/* Chunk Grid */}
-
             <div className="grid grid-cols-2 gap-4 max-[700px]:grid-cols-1">
 
               {[1, 2, 3, 4, 5].map((number) => (
@@ -379,14 +341,10 @@ function AdminDashboard({ user }) {
                   className="flex min-h-[92px] items-center gap-4 rounded-[14px] border border-white/[0.08] bg-white/[0.035] p-4 transition duration-200 hover:border-white/[0.14] hover:bg-white/[0.05]"
                 >
 
-                  {/* Number */}
-
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-gradient-to-br from-[#8b5cf6]/20 to-[#3b82f6]/20 font-['Space_Grotesk'] text-[16px] font-bold text-[#c4b5fd]">
                     {number}
                   </div>
 
-
-                  {/* Information */}
 
                   <div className="min-w-0 flex-1">
 
@@ -402,8 +360,6 @@ function AdminDashboard({ user }) {
 
                   </div>
 
-
-                  {/* File Button */}
 
                   <label className="relative shrink-0 cursor-pointer rounded-[9px] border border-white/[0.09] bg-white/[0.055] px-3.5 py-2.5 text-[12px] font-semibold text-[#d0d0d8] transition duration-200 hover:border-[#8b5cf6]/50 hover:bg-white/[0.08] hover:text-white">
 
@@ -432,9 +388,7 @@ function AdminDashboard({ user }) {
           </div>
 
 
-          {/* ======================================
-              ERROR
-              ====================================== */}
+          {/* ERROR */}
 
           {error && (
             <div className="mt-6 rounded-[11px] border border-red-400/20 bg-red-400/[0.07] px-4 py-3 text-[13px] leading-5 text-red-300">
@@ -443,9 +397,7 @@ function AdminDashboard({ user }) {
           )}
 
 
-          {/* ======================================
-              SUCCESS
-              ====================================== */}
+          {/* SUCCESS */}
 
           {message && (
             <div className="mt-6 rounded-[11px] border border-emerald-400/20 bg-emerald-400/[0.07] px-4 py-3 text-[13px] leading-5 text-emerald-300">
@@ -454,9 +406,7 @@ function AdminDashboard({ user }) {
           )}
 
 
-          {/* ======================================
-              SUBMIT
-              ====================================== */}
+          {/* SUBMIT */}
 
           <button
             type="submit"

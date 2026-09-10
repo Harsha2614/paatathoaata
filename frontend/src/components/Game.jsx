@@ -6,6 +6,31 @@ import {
   submitGuess,
 } from "../api";
 
+import {
+  BarChart3,
+  Clock3,
+  CircleHelp,
+  Clapperboard,
+  Headphones,
+  Play,
+  Pause,
+  Search,
+  X,
+  Share2,
+  Link as LinkIcon,
+  Check,
+  Sparkles,
+  Volume2,
+} from "lucide-react";
+
+import {
+  FaXTwitter,
+  FaWhatsapp,
+  FaFacebookF,
+} from "react-icons/fa6";
+
+
+const MAX_GUESSES = 5;
 
 const SCORE_BY_ATTEMPT = {
   1: 100,
@@ -16,23 +41,139 @@ const SCORE_BY_ATTEMPT = {
 };
 
 
-function getCurrentDate() {
-  return new Date().toLocaleDateString("en-IN", {
+/* =========================================================
+   DATE HELPERS
+========================================================= */
+
+function getTodayIST() {
+  return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+
+function formatDate(dateString) {
+  if (!dateString) {
+    return "";
+  }
+
+  const [year, month, day] =
+    dateString.split("-").map(Number);
+
+  return new Date(
+    year,
+    month - 1,
+    day
+  ).toLocaleDateString("en-US", {
+    month: "long",
     day: "numeric",
-    month: "short",
     year: "numeric",
   });
 }
 
 
+function formatShortDate(dateString) {
+  if (!dateString) {
+    return "";
+  }
+
+  const [year, month, day] =
+    dateString.split("-").map(Number);
+
+  return new Date(
+    year,
+    month - 1,
+    day
+  ).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+  });
+}
+
+
+/* =========================================================
+   COUNTDOWN
+========================================================= */
+
+function getCountdown() {
+  const now = new Date();
+
+  const tomorrow = new Date();
+
+  tomorrow.setDate(
+    tomorrow.getDate() + 1
+  );
+
+  tomorrow.setHours(
+    0,
+    0,
+    0,
+    0
+  );
+
+  const difference =
+    tomorrow.getTime() -
+    now.getTime();
+
+  if (difference <= 0) {
+    return {
+      hours: "00",
+      minutes: "00",
+      seconds: "00",
+    };
+  }
+
+  const totalSeconds =
+    Math.floor(difference / 1000);
+
+  const hours = Math.floor(
+    totalSeconds / 3600
+  );
+
+  const minutes = Math.floor(
+    (totalSeconds % 3600) / 60
+  );
+
+  const seconds =
+    totalSeconds % 60;
+
+  return {
+    hours: String(hours).padStart(2, "0"),
+    minutes: String(minutes).padStart(2, "0"),
+    seconds: String(seconds).padStart(2, "0"),
+  };
+}
+
+
+/* =========================================================
+   MAIN GAME
+========================================================= */
+
 function Game({ selectedDate }) {
   const [game, setGame] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [guess, setGuess] = useState("");
-  const [error, setError] = useState("");
 
+  const [loading, setLoading] =
+    useState(true);
+
+  const [guess, setGuess] =
+    useState("");
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [countdown, setCountdown] =
+    useState(getCountdown());
+
+
+  /* =========================================================
+     LOAD GAME
+  ========================================================= */
 
   useEffect(() => {
     loadGame();
@@ -50,12 +191,12 @@ function Game({ selectedDate }) {
 
       setGame(data);
 
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
 
       setError(
-        error.message ||
-        "Unable to load the game."
+        err.message ||
+        "Unable to load today's game."
       );
 
     } finally {
@@ -64,19 +205,33 @@ function Game({ selectedDate }) {
   }
 
 
+  /* =========================================================
+     COUNTDOWN
+  ========================================================= */
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(getCountdown());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+
+  /* =========================================================
+     SUBMIT GUESS
+  ========================================================= */
+
   async function handleGuess(event) {
     event.preventDefault();
 
-    const trimmedGuess = guess.trim();
-
     if (
-      !trimmedGuess ||
+      !guess.trim() ||
       submitting ||
       !game
     ) {
       return;
     }
-
 
     try {
       setSubmitting(true);
@@ -84,15 +239,8 @@ function Game({ selectedDate }) {
 
       const result = await submitGuess(
         game.game_session_id,
-        trimmedGuess
+        guess.trim()
       );
-
-
-      console.log(
-        "GUESS RESULT:",
-        result
-      );
-
 
       setGame((previous) => ({
         ...previous,
@@ -114,14 +262,12 @@ function Game({ selectedDate }) {
         total_score:
           result.total_score ??
           previous.total_score ??
-          previous.score ??
           0,
 
         answer:
           result.answer ??
           previous.answer,
       }));
-
 
       setGuess("");
 
@@ -141,20 +287,28 @@ function Game({ selectedDate }) {
 
   /* =========================================================
      LOADING
-     ========================================================= */
+  ========================================================= */
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-72px)] w-full items-center justify-center px-6 py-20">
+      <div className="flex min-h-[calc(100vh-62px)] items-center justify-center bg-[#080808]">
 
-        <div className="flex flex-col items-center gap-4 text-center">
+        <div className="text-center">
 
-          <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-white/[0.08] border-t-[#8b5cf6] border-r-[#3b82f6]" />
+          <div className="mb-4 flex justify-center">
+            <Clapperboard
+              size={36}
+              strokeWidth={1.5}
+              className="text-[#e4a32d]"
+            />
+          </div>
 
-          <p className="text-sm text-[#a4a4b2]">
-            {selectedDate
-              ? "Loading historical game..."
-              : "Loading today's game..."}
+          <h1 className="font-['Georgia'] text-[28px] font-bold text-[#e4a32d]">
+            ABSOLUTE CINEMA
+          </h1>
+
+          <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-[#68645f]">
+            Loading today's movie...
           </p>
 
         </div>
@@ -165,32 +319,36 @@ function Game({ selectedDate }) {
 
 
   /* =========================================================
-     ERROR
-     ========================================================= */
+     ERROR / NO GAME
+  ========================================================= */
 
-  if (error && !game) {
+  if (!game) {
     return (
-      <div className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-[1100px] items-center justify-center px-6 py-20 max-[700px]:px-4">
+      <div className="flex min-h-[calc(100vh-62px)] items-center justify-center bg-[#080808] px-5">
 
-        <div className="w-full max-w-[600px] rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-8 text-center shadow-[0_25px_70px_rgba(0,0,0,0.25)]">
+        <div className="rounded-[15px] border border-[#503d21] bg-[#151515] p-8 text-center">
 
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[16px] bg-red-500/10 text-2xl">
-            ⚠️
+          <div className="mb-4 flex justify-center">
+            <Clapperboard
+              size={34}
+              strokeWidth={1.5}
+              className="text-[#e4a32d]"
+            />
           </div>
 
-          <h2 className="mb-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.03em] text-white">
-            Something went wrong
+          <h2 className="font-['Georgia'] text-[24px] font-bold text-[#e4a32d]">
+            Unable to Load Game
           </h2>
 
-          <p className="mb-6 text-sm leading-6 text-[#a4a4b2]">
-            {error}
+          <p className="mt-3 text-[13px] text-[#77736d]">
+            {error || "Something went wrong."}
           </p>
 
           <button
             onClick={loadGame}
-            className="rounded-[13px] border-0 bg-gradient-to-r from-[#8b5cf6] to-[#3b82f6] px-6 py-3 text-sm font-bold text-white shadow-[0_10px_30px_rgba(99,102,241,0.25)] transition duration-200 hover:-translate-y-0.5 hover:brightness-110"
+            className="mt-5 rounded-[9px] border border-[#91661d] bg-[#d89b2e] px-6 py-3 text-[12px] font-bold text-[#171109] transition hover:brightness-110"
           >
-            Try Again
+            TRY AGAIN
           </button>
 
         </div>
@@ -200,56 +358,43 @@ function Game({ selectedDate }) {
   }
 
 
-  if (!game) {
-    return null;
-  }
-
-
   /* =========================================================
-     GAME STATE
-     ========================================================= */
+     GAME VALUES
+  ========================================================= */
 
   const attemptsUsed =
     game.attempts_used ?? 0;
 
-
   const attemptsRemaining =
     Math.max(
       0,
-      5 - attemptsUsed
+      MAX_GUESSES - attemptsUsed
     );
-
 
   const status =
     game.status ?? "PLAYING";
-
 
   const isFinished =
     status === "WON" ||
     status === "LOST";
 
-
-  const nextScore =
-    SCORE_BY_ATTEMPT[
-      attemptsUsed + 1
-    ] ?? 0;
-
-
-  const totalScore =
-    game.total_score ??
-    game.score ??
-    0;
-
-
-  const gameDate =
-    game.game_date ??
-    getCurrentDate();
-
+  const isWon =
+    status === "WON";
 
   const isTimeMachine =
     game.is_time_machine ??
     Boolean(selectedDate);
 
+  const totalScore =
+    game.total_score ?? 0;
+
+  const gameDate =
+    game.game_date ??
+    selectedDate ??
+    getTodayIST();
+
+  const formattedDate =
+    formatDate(gameDate);
 
   const revealedClips =
     game.revealed_clips ??
@@ -268,370 +413,125 @@ function Game({ selectedDate }) {
 
 
   return (
-    <div className="w-full">
+    <div className="min-h-[calc(100vh-62px)] w-full bg-[#080808]">
 
-      <div className="mx-auto w-full max-w-[1100px] px-6 pb-[100px] pt-20 max-[700px]:px-4 max-[700px]:pb-[70px] max-[700px]:pt-12">
-
-        <div className="mx-auto w-full max-w-[720px]">
+      <div className="mx-auto w-full max-w-[1000px] px-5 pb-24 pt-8 max-[700px]:px-4">
 
 
-          {/* =================================================
-              HEADER
-              ================================================= */}
+        {/* =================================================
+            HERO
+        ================================================= */}
 
-          <div className="mb-10 flex items-start justify-between gap-7 max-[700px]:flex-col max-[700px]:gap-5">
+        <section className="text-center">
 
-            <div>
+          <div className="flex items-center justify-center gap-2">
 
-              <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#a78bfa]">
-                {isTimeMachine
-                  ? `Time Machine · ${gameDate}`
-                  : "Today's Game"}
-              </p>
+            <Clapperboard
+              size={14}
+              strokeWidth={1.6}
+              className="text-[#d99a22]"
+            />
 
-
-              <h1 className="m-0 bg-gradient-to-r from-white via-[#b7a6ff] to-[#75a7ff] bg-clip-text font-['Space_Grotesk'] text-[clamp(34px,5vw,52px)] font-bold leading-[1.05] tracking-[-0.055em] text-transparent">
-                GuessTheSong
-              </h1>
-
-            </div>
-
-
-            {/* ATTEMPT COUNTER */}
-
-            <div className="min-w-[105px] rounded-[16px] border border-[#8b5cf638] bg-gradient-to-br from-[#8b5cf621] to-[#3b82f614] px-[18px] py-[14px] text-center shadow-[0_15px_45px_rgba(0,0,0,0.22)] max-[700px]:flex max-[700px]:min-w-0 max-[700px]:items-baseline max-[700px]:gap-2 max-[700px]:px-4 max-[700px]:py-2.5">
-
-              <strong className="block font-['Space_Grotesk'] text-[28px] font-bold text-white max-[700px]:text-[22px]">
-                {attemptsRemaining}
-              </strong>
-
-              <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#696977]">
-                Attempts
-              </span>
-
-            </div>
+            <span className="text-[10px] uppercase tracking-[0.24em] text-[#6f6a64]">
+              Daily Movie Guessing Game
+            </span>
 
           </div>
 
 
+          <h1 className="mt-2 font-['Georgia'] text-[54px] font-bold leading-none tracking-[-0.045em] text-[#e5a32d] max-[700px]:text-[39px]">
+            ABSOLUTE CINEMA
+          </h1>
 
-          {/* =================================================
-              TIME MACHINE BANNER
-              ================================================= */}
 
-          {isTimeMachine && (
-            <div className="mb-7 flex items-start gap-4 rounded-[16px] border border-[#8b5cf638] bg-gradient-to-r from-[#8b5cf612] to-[#3b82f608] px-5 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.15)]">
+          <div className="mt-5 inline-flex rounded-full border border-[#684916] bg-[#1c160c] px-4 py-2">
 
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-gradient-to-br from-[#8b5cf6] to-[#3b82f6] text-lg shadow-[0_8px_25px_rgba(99,102,241,0.25)]">
-                🕘
-              </div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#d9a139]">
 
-              <div>
+              {isTimeMachine
+                ? `TIME MACHINE · ${formattedDate}`
+                : `TODAY'S MOVIE · ${formattedDate}`}
 
-                <strong className="block font-['Space_Grotesk'] text-sm font-bold text-white">
-                  Time Machine
-                </strong>
+            </span>
 
-                <span className="mt-1 block text-xs leading-5 text-[#a4a4b2]">
-                  You are replaying the game from{" "}
-                  <strong className="text-[#c4b5fd]">
-                    {gameDate}
-                  </strong>
-                  . This game does not affect
-                  your statistics or streak.
-                </span>
+          </div>
 
-              </div>
+        </section>
 
-            </div>
-          )}
 
+        {/* =================================================
+            QUICK NAV CARDS
+        ================================================= */}
 
+        {!isFinished && (
+          <div className="mx-auto mt-7 grid max-w-[594px] grid-cols-3 gap-3 max-[650px]:grid-cols-1">
 
-          {/* =================================================
-              RESULT
-              ================================================= */}
-
-          {isFinished && (
-            <div
-              className={`
-                relative mb-11 overflow-hidden rounded-[24px]
-                border border-white/[0.09]
-                px-[30px] py-[42px]
-                text-center
-                shadow-[0_25px_70px_rgba(0,0,0,0.25)]
-                ${
-                  status === "WON"
-                    ? "bg-[radial-gradient(circle_at_50%_0%,rgba(34,197,94,0.12),transparent_55%),rgba(255,255,255,0.035)]"
-                    : "bg-[radial-gradient(circle_at_50%_0%,rgba(239,68,68,0.10),transparent_55%),rgba(255,255,255,0.035)]"
-                }
-              `}
-            >
-
-              {/* TOP GLOW */}
-
-              <div
-                className={`
-                  absolute left-1/4 right-1/4 top-0 h-[2px]
-                  bg-gradient-to-r from-transparent
-                  ${
-                    status === "WON"
-                      ? "via-[#22c55e]"
-                      : "via-[#ef4444]"
-                  }
-                  to-transparent
-                `}
-              />
-
-
-              {status === "WON" ? (
-                <>
-
-                  <div className="mx-auto mb-[18px] flex h-[62px] w-[62px] items-center justify-center rounded-[20px] bg-gradient-to-br from-[#8b5cf6] to-[#3b82f6] text-[25px] shadow-[0_15px_35px_rgba(99,102,241,0.25)]">
-                    ✨
-                  </div>
-
-
-                  <h2 className="m-0 mb-2 font-['Space_Grotesk'] text-[28px] font-bold tracking-[-0.03em] text-[#86efac]">
-                    🎬 Correct Answer!
-                  </h2>
-
-
-                  <p className="mb-6 text-sm text-[#a4a4b2]">
-                    {isTimeMachine
-                      ? `You guessed the movie from ${gameDate}!`
-                      : "You guessed today's movie!"}
-                  </p>
-
-
-                  <div className="mx-auto mb-6 max-w-[420px] rounded-[16px] border border-white/[0.09] bg-black/20 p-5">
-
-                    <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.12em] text-[#696977]">
-                      Movie
-                    </span>
-
-                    <h3 className="m-0 font-['Space_Grotesk'] text-2xl font-bold text-white">
-                      {game.answer}
-                    </h3>
-
-                  </div>
-
-
-                  <ResultStats
-                    attemptsUsed={attemptsUsed}
-                    totalScore={totalScore}
-                    gameDate={gameDate}
-                  />
-
-                </>
-              ) : (
-                <>
-
-                  <div className="mx-auto mb-[18px] flex h-[62px] w-[62px] items-center justify-center rounded-[20px] bg-gradient-to-br from-[#8b5cf6] to-[#3b82f6] text-[25px] shadow-[0_15px_35px_rgba(99,102,241,0.25)]">
-                    🎬
-                  </div>
-
-
-                  <h2 className="m-0 mb-2 font-['Space_Grotesk'] text-[28px] font-bold tracking-[-0.03em] text-[#fca5a5]">
-                    Game Over
-                  </h2>
-
-
-                  <p className="mb-6 text-sm text-[#a4a4b2]">
-                    Better luck next time!
-                  </p>
-
-
-                  <div className="mx-auto mb-6 max-w-[420px] rounded-[16px] border border-white/[0.09] bg-black/20 p-5">
-
-                    <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.12em] text-[#696977]">
-                      Correct Movie
-                    </span>
-
-                    <h3 className="m-0 font-['Space_Grotesk'] text-2xl font-bold text-white">
-                      {game.answer}
-                    </h3>
-
-                  </div>
-
-
-                  <ResultStats
-                    attemptsUsed={attemptsUsed}
-                    totalScore={totalScore}
-                    gameDate={gameDate}
-                  />
-
-                </>
-              )}
-
-            </div>
-          )}
-
-
-
-          {/* =================================================
-              AUDIO CLUES
-              ================================================= */}
-
-          {revealedClips.length > 0 && (
-            <section className="mt-12">
-
-              <div className="mb-4 flex items-center gap-2.5">
-
-                <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[10px] bg-gradient-to-br from-[#8b5cf6] to-[#3b82f6] text-sm shadow-[0_8px_25px_rgba(99,102,241,0.25)]">
-                  🎧
-                </span>
-
-                <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#a4a4b2]">
-                  Audio Clues
-                </span>
-
-              </div>
-
-
-              <div className="flex flex-col gap-2.5">
-
-                {revealedClips.map((clip) => (
-
-                  <div
-                    key={clip.chunk_number}
-                    className="flex items-center gap-[15px] rounded-[15px] border border-white/[0.09] bg-white/[0.035] p-[14px] transition duration-200 hover:-translate-y-px hover:border-white/[0.15] hover:bg-white/[0.055] max-[480px]:items-start max-[480px]:gap-2.5 max-[480px]:p-2.5"
-                  >
-
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] border border-[#8b5cf640] bg-gradient-to-br from-[#8b5cf64d] to-[#3b82f638] text-[13px] font-bold text-white max-[480px]:h-[35px] max-[480px]:w-[35px]">
-                      {clip.chunk_number}
-                    </div>
-
-
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-
-                      <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#a4a4b2]">
-                        Audio Clue {clip.chunk_number}
-                      </div>
-
-
-                      <audio
-                        controls
-                        preload="metadata"
-                        src={clip.audio_url}
-                        className="block h-[38px] w-full"
-                        onError={(event) => {
-                          console.error(
-                            "Audio failed to load:",
-                            clip.audio_url,
-                            event.currentTarget.error
-                          );
-                        }}
-                      />
-
-                    </div>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            </section>
-          )}
-
-
-
-          {/* =================================================
-              GUESS FORM
-              ================================================= */}
-
-          {!isFinished && (
-            <>
-
-              <div className="my-[26px] text-center text-[13px] text-[#696977]">
-                Correct answer earns{" "}
-                <strong className="text-[#a4a4b2]">
-                  {nextScore} points
-                </strong>
-              </div>
-
-
-              <form
-                onSubmit={handleGuess}
-                className="mt-5 flex gap-2.5 max-[700px]:flex-col"
-              >
-
-                <input
-                  type="text"
-                  value={guess}
-                  onChange={(event) =>
-                    setGuess(event.target.value)
-                  }
-                  placeholder="Enter the movie name..."
-                  disabled={submitting}
-                  autoComplete="off"
-                  className="min-w-0 flex-1 rounded-[14px] border border-white/[0.15] bg-white/[0.045] px-[19px] py-[17px] text-white outline-none transition duration-200 placeholder:text-[#696977] hover:bg-white/[0.06] focus:border-[#8b5cf6] focus:bg-white/[0.065] focus:ring-4 focus:ring-[#8b5cf61a] max-[700px]:min-h-[53px]"
+            <QuickNav
+              icon={
+                <BarChart3
+                  size={22}
+                  strokeWidth={1.7}
                 />
+              }
+              title="STATS"
+            />
+
+            <QuickNav
+              icon={
+                <Clock3
+                  size={22}
+                  strokeWidth={1.7}
+                />
+              }
+              title="TIME MACHINE"
+            />
+
+            <QuickNav
+              icon={
+                <CircleHelp
+                  size={22}
+                  strokeWidth={1.7}
+                />
+              }
+              title="HOW TO PLAY"
+            />
+
+          </div>
+        )}
 
 
-                <button
-                  type="submit"
-                  disabled={
-                    submitting ||
-                    !guess.trim()
-                  }
-                  className="rounded-[14px] border-0 bg-gradient-to-br from-[#8b5cf6] to-[#3b82f6] px-[25px] font-bold text-white shadow-[0_10px_30px_rgba(99,102,241,0.25)] transition duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_15px_40px_rgba(99,102,241,0.34)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-none max-[700px]:min-h-[53px]"
-                >
-                  {submitting
-                    ? "Checking..."
-                    : "Guess"}
-                </button>
+        {/* =================================================
+            RESULT STATE
+        ================================================= */}
 
-              </form>
+        {isFinished ? (
 
-            </>
-          )}
+          <CompletedGame
+            game={game}
+            attemptsUsed={attemptsUsed}
+            totalScore={totalScore}
+            isWon={isWon}
+            isTimeMachine={isTimeMachine}
+            formattedDate={formattedDate}
+            revealedClips={revealedClips}
+            countdown={countdown}
+          />
 
+        ) : (
 
+          <PlayingGame
+            game={game}
+            attemptsUsed={attemptsUsed}
+            attemptsRemaining={attemptsRemaining}
+            revealedClips={revealedClips}
+            guess={guess}
+            setGuess={setGuess}
+            submitting={submitting}
+            handleGuess={handleGuess}
+            error={error}
+          />
 
-          {/* =================================================
-              ERROR
-              ================================================= */}
-
-          {error && (
-            <p className="mt-[18px] rounded-[12px] border border-red-400/15 bg-red-400/[0.07] px-[15px] py-[13px] text-[13px] text-red-300">
-              {error}
-            </p>
-          )}
-
-
-
-          {/* =================================================
-              PROGRESS
-              ================================================= */}
-
-          {!isFinished && (
-            <div className="mt-8 flex justify-center gap-[9px]">
-
-              {[1, 2, 3, 4, 5].map(
-                (attempt) => (
-
-                  <div
-                    key={attempt}
-                    className={`
-                      h-2 w-2 rounded-full border
-                      transition duration-200
-                      ${
-                        attempt <= attemptsUsed
-                          ? "scale-[1.15] border-[#8b5cf6] bg-[#8b5cf6] shadow-[0_0_12px_rgba(139,92,246,0.75)]"
-                          : "border-white/[0.12] bg-white/[0.10]"
-                      }
-                    `}
-                  />
-
-                )
-              )}
-
-            </div>
-          )}
-
-        </div>
+        )}
 
       </div>
 
@@ -641,48 +541,1019 @@ function Game({ selectedDate }) {
 
 
 /* =========================================================
-   RESULT STATS
-   ========================================================= */
+   QUICK NAV
+========================================================= */
 
-function ResultStats({
-  attemptsUsed,
-  totalScore,
-  gameDate,
+function QuickNav({
+  icon,
+  title,
 }) {
   return (
-    <div className="mx-auto grid max-w-[480px] grid-cols-3 border-y border-white/[0.09] max-[480px]:grid-cols-1">
+    <div className="flex h-[74px] flex-col items-center justify-center rounded-[15px] border border-[#463721] bg-[#151515] transition hover:border-[#70511d] hover:bg-[#191816]">
 
-      <div className="border-r border-white/[0.09] px-2 py-[15px] max-[480px]:border-r-0 max-[480px]:border-b">
-        <strong className="mb-1 block font-['Space_Grotesk'] text-lg text-white">
-          {attemptsUsed}/5
-        </strong>
+      <span className="text-[#dca02d]">
+        {icon}
+      </span>
 
-        <span className="block text-[9px] font-bold uppercase tracking-[0.08em] text-[#696977]">
-          Guesses
-        </span>
+      <span className="mt-2 text-[10px] font-bold text-[#e2ddd5]">
+        {title}
+      </span>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   PLAYING GAME
+========================================================= */
+
+function PlayingGame({
+  game,
+  attemptsUsed,
+  attemptsRemaining,
+  revealedClips,
+  guess,
+  setGuess,
+  submitting,
+  handleGuess,
+  error,
+}) {
+  return (
+    <div className="mx-auto mt-7 max-w-[594px]">
+
+
+      {/* =================================================
+          GUESS PROGRESS
+      ================================================= */}
+
+      <div className="flex items-center justify-between rounded-[15px] border border-[#463721] bg-[#151515] px-5 py-3.5">
+
+        <div className="flex gap-2">
+
+          {[1, 2, 3, 4, 5].map(
+            (number) => {
+
+              const used =
+                number <= attemptsUsed;
+
+              return (
+                <div
+                  key={number}
+                  className={`
+                    h-[24px]
+                    w-[24px]
+                    rounded-full
+                    border
+                    ${
+                      used
+                        ? "border-[#d89b2d] bg-[#d89b2d]"
+                        : "border-[#454545] bg-[#292929]"
+                    }
+                  `}
+                />
+              );
+            }
+          )}
+
+        </div>
+
+
+        <div className="font-['Georgia'] text-[19px] font-bold text-[#e5a32d]">
+
+          {attemptsRemaining}
+
+          <span className="ml-1 text-[11px] uppercase tracking-[0.05em]">
+            Guesses
+          </span>
+
+        </div>
+
       </div>
 
 
-      <div className="border-r border-white/[0.09] px-2 py-[15px] max-[480px]:border-r-0 max-[480px]:border-b">
-        <strong className="mb-1 block font-['Space_Grotesk'] text-lg text-white">
-          {totalScore}
-        </strong>
+      {/* =================================================
+          INSTRUCTION
+      ================================================= */}
 
-        <span className="block text-[9px] font-bold uppercase tracking-[0.08em] text-[#696977]">
-          Score
-        </span>
+      <div className="my-5 flex items-center justify-center gap-2">
+
+        <Headphones
+          size={14}
+          strokeWidth={1.7}
+          className="text-[#b6afa5]"
+        />
+
+        <p className="m-0 text-center text-[12px] text-[#aaa39a]">
+          Listen to the clip — each wrong guess unlocks an easier one
+        </p>
+
       </div>
 
 
-      <div className="px-2 py-[15px]">
-        <strong className="mb-1 block font-['Space_Grotesk'] text-lg text-white">
-          {gameDate}
-        </strong>
+      {/* =================================================
+          CURRENT CLUE
+      ================================================= */}
 
-        <span className="block text-[9px] font-bold uppercase tracking-[0.08em] text-[#696977]">
-          Date
-        </span>
+      <div className="rounded-[15px] border border-[#493821] bg-[#171717] p-4">
+
+        <AudioRow
+          clip={
+            revealedClips[
+              revealedClips.length - 1
+            ]
+          }
+          index={
+            revealedClips.length
+          }
+        />
+
       </div>
+
+
+      {/* =================================================
+          QUESTION
+      ================================================= */}
+
+      <div className="mt-4 text-center">
+
+        <h2 className="font-['Georgia'] text-[15px] font-bold text-[#e6a62f]">
+          What movie is this from?
+        </h2>
+
+      </div>
+
+
+      {/* =================================================
+          GUESS FORM
+      ================================================= */}
+
+      <form
+        onSubmit={handleGuess}
+        className="mt-5"
+      >
+
+        <div className="relative">
+
+          <Search
+            size={20}
+            strokeWidth={1.8}
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#d29a24]"
+          />
+
+
+          <input
+            type="text"
+            value={guess}
+            onChange={(event) =>
+              setGuess(event.target.value)
+            }
+            placeholder="Search for a movie..."
+            disabled={submitting}
+            autoComplete="off"
+            className="h-[62px] w-full rounded-[13px] border border-[#755316] bg-[#0e0e0e] pl-12 pr-12 text-[16px] text-[#eee8df] outline-none transition placeholder:text-[#67625c] focus:border-[#c58b21] focus:ring-1 focus:ring-[#c58b21]/30"
+          />
+
+
+          {guess && (
+            <button
+              type="button"
+              onClick={() => setGuess("")}
+              aria-label="Clear search"
+              className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center justify-center border-0 bg-transparent text-[#6e6a64] transition hover:text-[#d7d0c5]"
+            >
+              <X
+                size={19}
+                strokeWidth={1.8}
+              />
+            </button>
+          )}
+
+        </div>
+
+
+        <div className="mt-3 flex gap-3">
+
+          <button
+            type="submit"
+            disabled={
+              submitting ||
+              !guess.trim()
+            }
+            className="h-[55px] flex-1 rounded-[12px] border border-[#a8751e] bg-gradient-to-b from-[#e5ad3e] to-[#bd831f] text-[14px] font-bold uppercase tracking-[0.08em] text-[#151008] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            {submitting
+              ? "CHECKING..."
+              : "GUESS"}
+          </button>
+
+
+          <button
+            type="button"
+            className="h-[55px] w-[82px] rounded-[12px] border border-[#795719] bg-transparent text-[13px] font-bold uppercase text-[#e3a52e] transition hover:bg-[#1d170d]"
+          >
+            SKIP
+          </button>
+
+        </div>
+
+
+        {guess && (
+          <p className="mt-3 text-center text-[10px] text-[#6f6961]">
+
+            Selected:{" "}
+
+            <span className="text-[#e0a32d]">
+              {guess}
+            </span>
+
+          </p>
+        )}
+
+      </form>
+
+
+      {error && (
+        <div className="mt-4 rounded-[10px] border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-[12px] text-red-300">
+          {error}
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   AUDIO ROW
+========================================================= */
+
+function AudioRow({
+  clip,
+  index,
+}) {
+  const [audio] =
+    useState(() => new Audio());
+
+  const [isPlaying, setIsPlaying] =
+    useState(false);
+
+  const [currentTime, setCurrentTime] =
+    useState(0);
+
+  const [duration, setDuration] =
+    useState(0);
+
+
+  const difficulty = [
+    "VERY DIFFICULT",
+    "SLIGHTLY EASIER",
+    "RECOGNIZABLE",
+    "FAMOUS SCENE",
+    "VERY RECOGNIZABLE",
+  ][
+    Math.min(
+      Math.max(index - 1, 0),
+      4
+    )
+  ];
+
+
+  /* =====================================================
+     AUDIO SETUP
+  ===================================================== */
+
+  useEffect(() => {
+    if (!clip?.audio_url) {
+      return;
+    }
+
+    audio.src = clip.audio_url;
+    audio.preload = "metadata";
+
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration || 0);
+    };
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    const handlePlay = () => {
+      setIsPlaying(true);
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+    };
+
+
+    audio.addEventListener(
+      "loadedmetadata",
+      handleLoadedMetadata
+    );
+
+    audio.addEventListener(
+      "timeupdate",
+      handleTimeUpdate
+    );
+
+    audio.addEventListener(
+      "ended",
+      handleEnded
+    );
+
+    audio.addEventListener(
+      "play",
+      handlePlay
+    );
+
+    audio.addEventListener(
+      "pause",
+      handlePause
+    );
+
+
+    return () => {
+      audio.pause();
+
+      audio.removeEventListener(
+        "loadedmetadata",
+        handleLoadedMetadata
+      );
+
+      audio.removeEventListener(
+        "timeupdate",
+        handleTimeUpdate
+      );
+
+      audio.removeEventListener(
+        "ended",
+        handleEnded
+      );
+
+      audio.removeEventListener(
+        "play",
+        handlePlay
+      );
+
+      audio.removeEventListener(
+        "pause",
+        handlePause
+      );
+    };
+
+  }, [clip?.audio_url, audio]);
+
+
+  /* =====================================================
+     PLAY / PAUSE
+  ===================================================== */
+
+  function togglePlay() {
+    if (!clip?.audio_url) {
+      return;
+    }
+
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play().catch((error) => {
+        console.error(
+          "Unable to play audio:",
+          error
+        );
+      });
+    }
+  }
+
+
+  /* =====================================================
+     SEEK
+  ===================================================== */
+
+  function handleSeek(event) {
+    const value =
+      Number(event.target.value);
+
+    audio.currentTime = value;
+    setCurrentTime(value);
+  }
+
+
+  /* =====================================================
+     TIME FORMAT
+  ===================================================== */
+
+  function formatTime(seconds) {
+    if (!Number.isFinite(seconds)) {
+      return "0:00";
+    }
+
+    const minutes =
+      Math.floor(seconds / 60);
+
+    const remainingSeconds =
+      Math.floor(seconds % 60);
+
+    return `${minutes}:${String(
+      remainingSeconds
+    ).padStart(2, "0")}`;
+  }
+
+
+  const progress =
+    duration > 0
+      ? (currentTime / duration) * 100
+      : 0;
+
+
+  return (
+    <div className="w-full">
+
+
+      {/* =================================================
+          TOP ROW
+      ================================================= */}
+
+      <div className="flex items-center gap-4 max-[550px]:gap-3">
+
+
+        {/* PLAY BUTTON */}
+
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={
+            isPlaying
+              ? "Pause audio"
+              : "Play audio"
+          }
+          className="
+            group
+            relative
+            flex
+            h-[56px]
+            w-[56px]
+            shrink-0
+            items-center
+            justify-center
+            rounded-full
+            border
+            border-[#e8ad3b]
+            bg-gradient-to-br
+            from-[#f1bb4d]
+            to-[#d99724]
+            text-[#171108]
+            shadow-[0_8px_24px_rgba(220,155,38,0.18)]
+            transition
+            duration-200
+            hover:scale-105
+            hover:shadow-[0_10px_30px_rgba(220,155,38,0.30)]
+            active:scale-95
+          "
+        >
+
+          {isPlaying ? (
+            <Pause
+              size={21}
+              strokeWidth={2}
+            />
+          ) : (
+            <Play
+              size={22}
+              strokeWidth={1.8}
+              className="ml-[2px]"
+            />
+          )}
+
+        </button>
+
+
+        {/* AUDIO CONTENT */}
+
+        <div className="min-w-0 flex-1">
+
+
+          {/* TITLE */}
+
+          <div className="flex items-center justify-between gap-3">
+
+            <span className="text-[12px] font-bold text-[#eee7dc]">
+              Audio Clue {clip?.chunk_number}
+            </span>
+
+            <span className="shrink-0 text-[8px] font-medium tracking-[0.02em] text-[#6f6a62]">
+              {difficulty}
+            </span>
+
+          </div>
+
+
+          {/* CUSTOM PROGRESS */}
+
+          <div className="mt-2 flex items-center gap-2">
+
+            <span className="w-[30px] shrink-0 font-mono text-[9px] text-[#77716a]">
+              {formatTime(currentTime)}
+            </span>
+
+
+            <input
+              type="range"
+              min="0"
+              max={duration || 0}
+              step="0.01"
+              value={currentTime}
+              onChange={handleSeek}
+              aria-label="Audio progress"
+              className="audio-slider h-[4px] min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-[#34322f] accent-[#e2a52f]"
+              style={{
+                background: `linear-gradient(
+                  to right,
+                  #e2a52f ${progress}%,
+                  #34322f ${progress}%
+                )`,
+              }}
+            />
+
+
+            <span className="w-[30px] shrink-0 text-right font-mono text-[9px] text-[#77716a]">
+              {formatTime(duration)}
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      {/* =================================================
+          PLAYING INDICATOR
+      ================================================= */}
+
+      {isPlaying && (
+        <div className="ml-[72px] mt-2 flex items-center gap-2">
+
+          <Volume2
+            size={11}
+            strokeWidth={1.7}
+            className="text-[#9b752d]"
+          />
+
+          <span className="text-[8px] uppercase tracking-[0.16em] text-[#9b752d]">
+            Playing
+          </span>
+
+          <span className="ml-1 flex items-end gap-[2px]">
+
+            <span className="h-[5px] w-[2px] animate-pulse rounded-full bg-[#dca12c]" />
+
+            <span className="h-[9px] w-[2px] animate-pulse rounded-full bg-[#dca12c] [animation-delay:100ms]" />
+
+            <span className="h-[6px] w-[2px] animate-pulse rounded-full bg-[#dca12c] [animation-delay:200ms]" />
+
+            <span className="h-[11px] w-[2px] animate-pulse rounded-full bg-[#dca12c] [animation-delay:300ms]" />
+
+          </span>
+
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   COMPLETED GAME
+========================================================= */
+
+function CompletedGame({
+  game,
+  attemptsUsed,
+  totalScore,
+  isWon,
+  isTimeMachine,
+  formattedDate,
+  revealedClips,
+  countdown,
+}) {
+  return (
+    <div className="mx-auto mt-7 max-w-[594px]">
+
+
+      {/* =================================================
+          RESULT CARD
+      ================================================= */}
+
+      <section className="relative overflow-hidden rounded-[15px] border border-[#63491f] bg-[#171717] px-6 py-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+
+        <div className="absolute left-1/4 right-1/4 top-0 h-px bg-gradient-to-r from-transparent via-[#d99a22] to-transparent" />
+
+
+        <div className="flex justify-center text-[#e5a32d]">
+          <Sparkles
+            size={29}
+            strokeWidth={1.5}
+          />
+        </div>
+
+
+        <div className="mt-2 flex items-center justify-center gap-2">
+
+          <Clapperboard
+            size={27}
+            strokeWidth={1.5}
+            className="text-[#e5a32d]"
+          />
+
+          <h2 className="font-['Georgia'] text-[30px] font-bold text-[#e5a32d] max-[600px]:text-[25px]">
+
+            {isWon
+              ? "ABSOLUTE CINEMA!"
+              : "SO CLOSE!"}
+
+          </h2>
+
+        </div>
+
+
+        <p className="mt-1 text-[13px] text-[#88827a]">
+
+          {isWon
+            ? "You guessed today's movie!"
+            : "Better luck on the next movie!"}
+
+        </p>
+
+
+        {/* =================================================
+            FIVE GUESS BOXES
+        ================================================= */}
+
+        <div className="mt-5 flex justify-center gap-2">
+
+          {[1, 2, 3, 4, 5].map(
+            (number) => {
+
+              const active =
+                number === attemptsUsed &&
+                isWon;
+
+              return (
+                <div
+                  key={number}
+                  className={`
+                    flex
+                    h-[51px]
+                    w-[51px]
+                    items-center
+                    justify-center
+                    rounded-[10px]
+                    border
+                    ${
+                      active
+                        ? "border-[#38bd8a] bg-[#0ca875] text-white shadow-[0_7px_18px_rgba(10,170,115,0.22)]"
+                        : "border-[#414141] bg-[#242424] text-transparent"
+                    }
+                  `}
+                >
+
+                  {active && (
+                    <Check
+                      size={22}
+                      strokeWidth={2.5}
+                    />
+                  )}
+
+                </div>
+              );
+            }
+          )}
+
+        </div>
+
+
+        {/* =================================================
+            ANSWER
+        ================================================= */}
+
+        <h3 className="mt-5 font-['Georgia'] text-[28px] font-bold uppercase text-[#eee7dc]">
+          {game.answer || "Unknown"}
+        </h3>
+
+
+        {game.movie_year && (
+          <p className="mt-1 font-['Georgia'] text-[15px] font-bold text-[#dca12c]">
+            {game.movie_year}
+          </p>
+        )}
+
+
+        {/* =================================================
+            THREE STATS
+        ================================================= */}
+
+        <div className="mt-6 grid grid-cols-3 gap-2">
+
+          <ResultStat
+            value={`${attemptsUsed} / 5`}
+            label="GUESSES"
+          />
+
+          <ResultStat
+            value={totalScore}
+            label="SCORE"
+          />
+
+          <ResultStat
+            value={formatShortDate(game.game_date)}
+            label="DATE"
+          />
+
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          ALL CLUES
+      ================================================= */}
+
+      <section className="mt-6 rounded-[15px] border border-[#463721] bg-[#151515] p-4">
+
+        <div className="mb-3 flex items-center justify-center gap-2">
+
+          <Headphones
+            size={13}
+            strokeWidth={1.7}
+            className="text-[#9b752d]"
+          />
+
+          <p className="m-0 text-[10px] uppercase tracking-[0.22em] text-[#77716a]">
+            All Clues · Replay Any Audio
+          </p>
+
+        </div>
+
+
+        <div className="flex flex-col gap-2">
+
+          {revealedClips.map(
+            (clip, index) => (
+
+              <div
+                key={clip.chunk_number}
+                className="rounded-[13px] border border-[#443622] bg-[#191919] p-3.5"
+              >
+
+                <AudioRow
+                  clip={clip}
+                  index={index + 1}
+                />
+
+              </div>
+
+            )
+          )}
+
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          SHARE RESULT
+      ================================================= */}
+
+      {!isTimeMachine && (
+        <ShareResult
+          attemptsUsed={attemptsUsed}
+          totalScore={totalScore}
+        />
+      )}
+
+
+      {/* =================================================
+          NEXT MOVIE
+      ================================================= */}
+
+      {!isTimeMachine && (
+        <section className="mt-5 rounded-[15px] border border-[#463721] bg-[#151515] px-5 py-5 text-center">
+
+          <p className="m-0 text-[10px] uppercase tracking-[0.22em] text-[#77716a]">
+            NEXT MOVIE IN
+          </p>
+
+
+          <div className="mt-2 flex items-center justify-center gap-4 font-mono text-[31px] font-bold text-[#e5a32d]">
+
+            <CountdownUnit
+              value={countdown.hours}
+              label="HRS"
+            />
+
+            <span>:</span>
+
+            <CountdownUnit
+              value={countdown.minutes}
+              label="MINS"
+            />
+
+            <span>:</span>
+
+            <CountdownUnit
+              value={countdown.seconds}
+              label="SECS"
+            />
+
+          </div>
+
+        </section>
+      )}
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   RESULT STAT
+========================================================= */
+
+function ResultStat({
+  value,
+  label,
+}) {
+  return (
+    <div className="rounded-[9px] border border-[#3e321f] bg-[#101010] px-2 py-3">
+
+      <strong className="block font-['Georgia'] text-[18px] font-bold text-[#e8dfd2]">
+        {value}
+      </strong>
+
+      <span className="mt-1 block text-[8px] uppercase tracking-[0.1em] text-[#66615b]">
+        {label}
+      </span>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   SHARE RESULT
+========================================================= */
+
+function ShareResult({
+  attemptsUsed,
+  totalScore,
+}) {
+  const text =
+    `Absolute Cinema\n` +
+    `${attemptsUsed}/5 guesses · ${totalScore} points\n` +
+    `Can you beat me?`;
+
+
+  async function copyResult() {
+    try {
+      await navigator.clipboard.writeText(text);
+
+      alert("Result copied!");
+
+    } catch {
+      console.error(
+        "Unable to copy result."
+      );
+    }
+  }
+
+
+  async function shareResult() {
+    if (navigator.share) {
+
+      try {
+        await navigator.share({
+          title: "Absolute Cinema",
+          text,
+        });
+
+      } catch {
+        // User cancelled share.
+      }
+
+      return;
+    }
+
+    copyResult();
+  }
+
+
+  return (
+    <section className="mt-5">
+
+      <p className="mb-3 text-center text-[10px] uppercase tracking-[0.22em] text-[#77716a]">
+        SHARE RESULT
+      </p>
+
+
+      <div className="grid grid-cols-2 gap-2.5 max-[500px]:grid-cols-1">
+
+        {/* X */}
+
+        <button
+          onClick={shareResult}
+          className="flex h-[44px] items-center justify-center gap-2 rounded-[10px] border-0 bg-[#f1f1f1] text-[12px] font-bold text-[#171717] transition hover:brightness-95"
+        >
+          <FaXTwitter size={14} />
+          <span>X / Twitter</span>
+        </button>
+
+
+        {/* WHATSAPP */}
+
+        <button
+          onClick={shareResult}
+          className="flex h-[44px] items-center justify-center gap-2 rounded-[10px] border-0 bg-[#09a874] text-[12px] font-bold text-white transition hover:brightness-105"
+        >
+          <FaWhatsapp size={16} />
+          <span>WhatsApp</span>
+        </button>
+
+
+        {/* FACEBOOK */}
+
+        <button
+          onClick={shareResult}
+          className="flex h-[44px] items-center justify-center gap-2 rounded-[10px] border-0 bg-[#2867df] text-[12px] font-bold text-white transition hover:brightness-105"
+        >
+          <FaFacebookF size={14} />
+          <span>Facebook</span>
+        </button>
+
+
+        {/* COPY LINK */}
+
+        <button
+          onClick={copyResult}
+          className="flex h-[44px] items-center justify-center gap-2 rounded-[10px] border border-[#946719] bg-[#281c0a] text-[12px] font-bold text-[#e1a42f] transition hover:bg-[#34240d]"
+        >
+          <LinkIcon
+            size={15}
+            strokeWidth={1.8}
+          />
+
+          <span>Copy Link</span>
+        </button>
+
+      </div>
+
+
+      {/* SHARE */}
+
+      <button
+        onClick={shareResult}
+        className="mt-2.5 flex h-[46px] w-full items-center justify-center gap-2 rounded-[10px] border-0 bg-gradient-to-b from-[#e4ac3c] to-[#c28620] text-[12px] font-bold uppercase tracking-[0.05em] text-[#161108] transition hover:brightness-110"
+      >
+        <Share2
+          size={16}
+          strokeWidth={1.8}
+        />
+
+        <span>SHARE RESULT</span>
+
+      </button>
+
+    </section>
+  );
+}
+
+
+/* =========================================================
+   COUNTDOWN UNIT
+========================================================= */
+
+function CountdownUnit({
+  value,
+  label,
+}) {
+  return (
+    <div className="flex flex-col items-center">
+
+      <span>
+        {value}
+      </span>
+
+      <small className="mt-0.5 text-[8px] font-sans font-normal tracking-[0.14em] text-[#68625b]">
+        {label}
+      </small>
 
     </div>
   );

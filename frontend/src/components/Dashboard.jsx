@@ -1,16 +1,70 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
 
 import {
   getStats,
   getHistory,
 } from "../api";
 
+import {
+  BarChart3,
+  AlertTriangle,
+  Gamepad2,
+  Trophy,
+  Percent,
+  Flame,
+  Target,
+  Star,
+  Clapperboard,
+  Check,
+  X,
+} from "lucide-react";
+
+
+/* =========================================================
+   DATE FORMAT
+========================================================= */
+
+function formatHistoryDate(dateString) {
+  if (!dateString) {
+    return "";
+  }
+
+  const [year, month, day] =
+    dateString.split("-").map(Number);
+
+  return new Date(
+    year,
+    month - 1,
+    day
+  ).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
 
 function Dashboard() {
-  const [stats, setStats] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] =
+    useState(null);
 
+  const [history, setHistory] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+
+  /* =========================================================
+     LOAD DASHBOARD
+  ========================================================= */
 
   useEffect(() => {
     loadDashboard();
@@ -19,11 +73,15 @@ function Dashboard() {
 
   async function loadDashboard() {
     try {
-      const [statsData, historyData] =
-        await Promise.all([
-          getStats(),
-          getHistory(),
-        ]);
+      setLoading(true);
+
+      const [
+        statsData,
+        historyData,
+      ] = await Promise.all([
+        getStats(),
+        getHistory(),
+      ]);
 
       setStats(statsData);
       setHistory(historyData);
@@ -39,19 +97,36 @@ function Dashboard() {
 
   /* =========================================================
      LOADING
-     ========================================================= */
+  ========================================================= */
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-72px)] w-full items-center justify-center px-6 py-20">
+      <div className="flex min-h-[calc(100vh-62px)] w-full items-center justify-center bg-[#080808]">
 
-        <div className="flex flex-col items-center gap-4">
+        <div className="text-center">
 
-          <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-white/[0.08] border-t-[#8b5cf6] border-r-[#3b82f6]" />
+          <div className="mb-5 flex justify-center">
 
-          <p className="text-sm text-[#a4a4b2]">
-            Loading statistics...
+            <BarChart3
+              size={32}
+              strokeWidth={1.5}
+              className="text-[#d99a22]"
+            />
+
+          </div>
+
+
+          <p className="font-['Georgia'] text-[22px] font-bold text-[#e3a32d]">
+            YOUR STATS
           </p>
+
+
+          <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-[#68635d]">
+            Loading your performance...
+          </p>
+
+
+          <div className="mx-auto mt-6 h-6 w-6 animate-spin rounded-full border-2 border-[#3b3020] border-t-[#d99a22]" />
 
         </div>
 
@@ -62,25 +137,35 @@ function Dashboard() {
 
   /* =========================================================
      ERROR
-     ========================================================= */
+  ========================================================= */
 
   if (!stats) {
     return (
-      <div className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-[1100px] items-center justify-center px-6 py-20 max-[700px]:px-4">
+      <div className="mx-auto flex min-h-[calc(100vh-62px)] w-full max-w-[1000px] items-center justify-center px-5">
 
-        <div className="w-full max-w-[600px] rounded-[20px] border border-white/[0.09] bg-white/[0.045] p-8 text-center shadow-[0_25px_70px_rgba(0,0,0,0.25)]">
+        <div className="w-full max-w-[560px] rounded-[16px] border border-[#49371f] bg-[#151515] p-8 text-center">
 
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[16px] bg-red-500/10 text-2xl">
-            ⚠️
+
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-[#694b1b] bg-[#1c1812]">
+
+            <AlertTriangle
+              size={25}
+              strokeWidth={1.5}
+              className="text-[#d99a22]"
+            />
+
           </div>
 
-          <h2 className="mb-2 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.03em] text-white">
-            Unable to load statistics
+
+          <h2 className="font-['Georgia'] text-[25px] font-bold text-[#e5a32c]">
+            Unable to Load Statistics
           </h2>
 
-          <p className="text-sm text-[#a4a4b2]">
+
+          <p className="mt-3 text-[13px] text-[#77736d]">
             Please try again later.
           </p>
+
 
         </div>
 
@@ -89,230 +174,385 @@ function Dashboard() {
   }
 
 
+  /* =========================================================
+     MAIN DASHBOARD
+  ========================================================= */
+
   return (
-    <div className="w-full">
+    <div className="w-full bg-[#080808]">
 
-      <div className="mx-auto w-full max-w-[1100px] px-6 pb-[100px] pt-20 max-[700px]:px-4 max-[700px]:pb-[70px] max-[700px]:pt-12">
+      <div className="mx-auto w-full max-w-[1000px] px-5 pb-24 pt-10 max-[700px]:px-4">
 
 
-        {/* =====================================================
+        {/* =================================================
             HEADER
-            ===================================================== */}
+        ================================================= */}
 
-        <div className="mb-10">
+        <div className="mb-9 text-center">
 
-          <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#a78bfa]">
-            Your Statistics
-          </p>
+          <div className="mb-2 flex justify-center">
 
-          <h1 className="m-0 bg-gradient-to-r from-white via-[#b7a6ff] to-[#75a7ff] bg-clip-text font-['Space_Grotesk'] text-[clamp(36px,5vw,52px)] font-bold leading-[1.05] tracking-[-0.055em] text-transparent">
-            Dashboard
-          </h1>
-
-        </div>
-
-
-        {/* =====================================================
-            STAT CARDS
-            ===================================================== */}
-
-        <div className="grid grid-cols-4 gap-3.5 max-[900px]:grid-cols-2 max-[500px]:grid-cols-1">
-
-          <StatCard
-            label="Current Streak"
-            value={stats.current_streak}
-            icon="🔥"
-          />
-
-          <StatCard
-            label="Best Streak"
-            value={stats.best_streak}
-            icon="🏆"
-          />
-
-          <StatCard
-            label="Games Played"
-            value={stats.games_played}
-            icon="🎵"
-          />
-
-          <StatCard
-            label="Wins"
-            value={stats.games_won}
-            icon="✓"
-          />
-
-          <StatCard
-            label="Average Guesses"
-            value={stats.average_guesses}
-            icon="🎯"
-          />
-
-          <StatCard
-            label="Total Score"
-            value={stats.total_score}
-            icon="⭐"
-          />
-
-          <StatCard
-            label="Win Rate"
-            value={`${stats.win_rate}%`}
-            icon="📈"
-          />
-
-        </div>
-
-
-        {/* =====================================================
-            GAME HISTORY
-            ===================================================== */}
-
-        <section className="mt-12">
-
-          <div className="mb-5 flex items-end justify-between">
-
-            <div>
-
-              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#696977]">
-                Your Games
-              </p>
-
-              <h2 className="m-0 font-['Space_Grotesk'] text-[25px] font-bold tracking-[-0.03em] text-white">
-                Game History
-              </h2>
-
-            </div>
-
-            {history.length > 0 && (
-              <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#696977]">
-                {history.length}{" "}
-                {history.length === 1
-                  ? "Game"
-                  : "Games"}
-              </span>
-            )}
+            <BarChart3
+              size={28}
+              strokeWidth={1.5}
+              className="text-[#d99a22]"
+            />
 
           </div>
 
 
+          <h1 className="m-0 font-['Georgia'] text-[39px] font-bold tracking-[-0.025em] text-[#e4a32d] max-[600px]:text-[32px]">
+            YOUR STATS
+          </h1>
+
+
+          <p className="mt-2 text-[12px] text-[#706b64]">
+            Daily Challenge performance
+          </p>
+
+        </div>
+
+
+        {/* =================================================
+            PRIMARY STATS
+        ================================================= */}
+
+        <div className="mx-auto grid max-w-[700px] grid-cols-3 gap-3 max-[700px]:grid-cols-2 max-[450px]:grid-cols-1">
+
+
+          {/* GAMES PLAYED */}
+
+          <StatCard
+            icon={
+              <Gamepad2
+                size={18}
+                strokeWidth={1.7}
+              />
+            }
+            value={stats.games_played}
+            label="Games Played"
+          />
+
+
+          {/* WINS */}
+
+          <StatCard
+            icon={
+              <Trophy
+                size={18}
+                strokeWidth={1.7}
+              />
+            }
+            value={stats.games_won}
+            label="Wins"
+          />
+
+
+          {/* WIN RATE */}
+
+          <StatCard
+            icon={
+              <Percent
+                size={18}
+                strokeWidth={1.7}
+              />
+            }
+            value={`${stats.win_rate}%`}
+            label="Win Rate"
+          />
+
+
+          {/* CURRENT STREAK */}
+
+          <StatCard
+            icon={
+              <Flame
+                size={18}
+                strokeWidth={1.7}
+              />
+            }
+            value={stats.current_streak}
+            label="Current Streak"
+          />
+
+
+          {/* LONGEST STREAK */}
+
+          <StatCard
+            icon={
+              <Flame
+                size={18}
+                strokeWidth={1.7}
+              />
+            }
+            value={stats.best_streak}
+            label="Longest Streak"
+          />
+
+
+          {/* AVG GUESSES */}
+
+          <StatCard
+            icon={
+              <Target
+                size={18}
+                strokeWidth={1.7}
+              />
+            }
+            value={stats.average_guesses}
+            label="Avg Guesses"
+          />
+
+        </div>
+
+
+        {/* =================================================
+            SCORE STATS
+        ================================================= */}
+
+        <div className="mx-auto mt-3 grid max-w-[470px] grid-cols-2 gap-3 max-[450px]:grid-cols-1">
+
+
+          {/* TOTAL SCORE */}
+
+          <StatCard
+            icon={
+              <Star
+                size={18}
+                strokeWidth={1.7}
+              />
+            }
+            value={stats.total_score}
+            label="Total Score"
+          />
+
+
+          {/* AVERAGE SCORE */}
+
+          <StatCard
+            icon={
+              <Star
+                size={18}
+                strokeWidth={1.7}
+              />
+            }
+            value={
+              stats.games_played
+                ? Math.round(
+                    stats.total_score /
+                    stats.games_played
+                  )
+                : 0
+            }
+            label="Average Score"
+          />
+
+        </div>
+
+
+        {/* =================================================
+            DAILY HISTORY
+        ================================================= */}
+
+        <section className="mx-auto mt-10 max-w-[700px]">
+
+
+          <div className="mb-4">
+
+            <h2 className="m-0 font-['Georgia'] text-[20px] font-bold text-[#e3a32d]">
+              DAILY HISTORY
+            </h2>
+
+          </div>
+
+
+          {/* =================================================
+              EMPTY HISTORY
+          ================================================= */}
+
           {history.length === 0 ? (
 
-            /* EMPTY STATE */
+            <div className="rounded-[14px] border border-dashed border-[#3d3427] bg-[#111111] px-6 py-12 text-center">
 
-            <div className="rounded-[20px] border border-dashed border-white/[0.10] bg-white/[0.025] px-6 py-14 text-center">
 
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-[16px] bg-white/[0.05] text-2xl">
-                🎵
+              <div className="mb-4 flex justify-center">
+
+                <Clapperboard
+                  size={28}
+                  strokeWidth={1.5}
+                  className="text-[#d99a22]"
+                />
+
               </div>
 
-              <h3 className="mb-2 font-['Space_Grotesk'] text-lg font-semibold text-white">
+
+              <h3 className="font-['Georgia'] text-[17px] font-bold text-[#ddd5c8]">
                 No games played yet
               </h3>
 
-              <p className="m-0 text-sm text-[#696977]">
-                Play today's game to start building
-                your history.
+
+              <p className="mt-2 text-[12px] text-[#68635d]">
+                Play today's game to start building your history.
               </p>
+
 
             </div>
 
           ) : (
 
-            /* HISTORY LIST */
 
-            <div className="overflow-hidden rounded-[20px] border border-white/[0.09] bg-white/[0.035]">
+            /* =================================================
+               HISTORY LIST
+            ================================================= */
 
-              {/* TABLE HEADER */}
+            <div className="overflow-hidden rounded-[14px] border border-[#443521] bg-[#151515]">
 
-              <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr] border-b border-white/[0.08] bg-white/[0.025] px-5 py-3.5 max-[600px]:grid-cols-[1.4fr_1fr_1fr] max-[600px]:px-4">
+              {history.map(
+                (game, index) => {
 
-                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#696977]">
-                  Date
-                </span>
-
-                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#696977]">
-                  Result
-                </span>
-
-                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#696977]">
-                  Guesses
-                </span>
-
-                <span className="text-right text-[10px] font-bold uppercase tracking-[0.1em] text-[#696977] max-[600px]:hidden">
-                  Score
-                </span>
-
-              </div>
+                  const won =
+                    game.status === "WON";
 
 
-              {/* HISTORY ROWS */}
-
-              {history.map((game, index) => {
-
-                const won =
-                  game.status === "WON";
-
-                return (
-                  <div
-                    key={`${game.game_date}-${index}`}
-                    className="grid grid-cols-[1.5fr_1fr_1fr_1fr] items-center border-b border-white/[0.06] px-5 py-4 transition duration-200 last:border-b-0 hover:bg-white/[0.025] max-[600px]:grid-cols-[1.4fr_1fr_1fr] max-[600px]:px-4"
-                  >
-
-                    {/* DATE */}
-
-                    <span className="font-['DM_Sans'] text-[13px] font-medium text-[#d7d7df]">
-                      {game.game_date}
-                    </span>
+                  return (
+                    <div
+                      key={`${game.game_date}-${index}`}
+                      className="flex items-center justify-between gap-5 border-b border-[#30291f] px-5 py-4 last:border-b-0 hover:bg-[#1a1815] max-[600px]:px-4"
+                    >
 
 
-                    {/* RESULT */}
+                      {/* =====================================
+                          DATE + RESULT
+                      ===================================== */}
 
-                    <div>
+                      <div className="min-w-0">
 
-                      <span
-                        className={`
-                          inline-flex items-center rounded-full
-                          border px-2.5 py-1
-                          text-[10px] font-bold uppercase
-                          tracking-[0.06em]
-                          ${
-                            won
-                              ? "border-green-400/20 bg-green-400/[0.08] text-green-300"
-                              : "border-red-400/20 bg-red-400/[0.08] text-red-300"
+                        <p className="m-0 font-['Georgia'] text-[14px] font-bold text-[#e1d9cc]">
+
+                          {formatHistoryDate(
+                            game.game_date
+                          )}
+
+                        </p>
+
+
+                        <p
+                          className={`
+                            mt-1 flex
+                            items-center
+                            gap-1.5
+                            text-[10px]
+                            font-semibold
+                            uppercase
+                            tracking-[0.06em]
+                            ${
+                              won
+                                ? "text-[#62bd8a]"
+                                : "text-[#c56b5c]"
+                            }
+                          `}
+                        >
+
+                          {won ? (
+                            <Check
+                              size={12}
+                              strokeWidth={2.2}
+                            />
+                          ) : (
+                            <X
+                              size={12}
+                              strokeWidth={2.2}
+                            />
+                          )}
+
+
+                          <span>
+                            {won
+                              ? "Won"
+                              : "Lost"}
+                          </span>
+
+
+                          <span>
+                            ·
+                          </span>
+
+
+                          <span>
+                            {game.attempts}{" "}
+                            {game.attempts === 1
+                              ? "guess"
+                              : "guesses"}
+                          </span>
+
+
+                          <span>
+                            ·
+                          </span>
+
+
+                          <span>
+                            {game.score} pts
+                          </span>
+
+                        </p>
+
+                      </div>
+
+
+                      {/* =====================================
+                          GUESS DOTS
+                      ===================================== */}
+
+                      <div className="flex shrink-0 items-center gap-1.5">
+
+                        {[1, 2, 3, 4, 5].map(
+                          (attempt) => {
+
+                            const active =
+                              attempt <=
+                              game.attempts;
+
+
+                            return (
+                              <span
+                                key={attempt}
+                                className={`
+                                  h-[21px]
+                                  w-[21px]
+                                  rounded-full
+                                  border
+                                  ${
+                                    active
+                                      ? won &&
+                                        attempt ===
+                                          game.attempts
+                                        ? "border-[#5bc98e] bg-[#28a96b]"
+                                        : "border-[#76521d] bg-[#5e431c]"
+                                      : "border-[#393939] bg-[#242424]"
+                                  }
+                                `}
+                              />
+                            );
+
                           }
-                        `}
-                      >
-                        {won
-                          ? "Won"
-                          : "Lost"}
-                      </span>
+                        )}
+
+                      </div>
+
 
                     </div>
+                  );
 
-
-                    {/* GUESSES */}
-
-                    <span className="text-[13px] text-[#a4a4b2]">
-                      {game.attempts}
-                    </span>
-
-
-                    {/* SCORE */}
-
-                    <strong className="text-right font-['Space_Grotesk'] text-[14px] font-semibold text-white max-[600px]:hidden">
-                      {game.score} pts
-                    </strong>
-
-                  </div>
-                );
-
-              })}
+                }
+              )}
 
             </div>
 
           )}
 
         </section>
+
 
       </div>
 
@@ -323,40 +563,52 @@ function Dashboard() {
 
 /* =========================================================
    STAT CARD
-   ========================================================= */
+========================================================= */
 
 function StatCard({
-  label,
-  value,
   icon,
+  value,
+  label,
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-[18px] border border-white/[0.09] bg-white/[0.045] px-5 py-[22px] transition duration-200 hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/[0.06] hover:shadow-[0_15px_40px_rgba(0,0,0,0.18)]">
-
-      {/* TOP GRADIENT */}
-
-      <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-[#8b5cf655] to-transparent opacity-60 transition duration-200 group-hover:via-[#8b5cf6aa]" />
+    <div className="group relative overflow-hidden rounded-[14px] border border-[#453621] bg-[#161616] px-4 py-5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-[#70521f] hover:bg-[#191816]">
 
 
-      {/* ICON */}
+      {/* =================================================
+          GOLD TOP LINE
+      ================================================= */}
 
-      <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-[11px] bg-gradient-to-br from-[#8b5cf621] to-[#3b82f614] text-base">
+      <div className="absolute left-1/4 right-1/4 top-0 h-px bg-gradient-to-r from-transparent via-[#b67d1d] to-transparent opacity-70" />
+
+
+      {/* =================================================
+          ICON
+      ================================================= */}
+
+      <div className="mb-3 flex justify-center text-[#d99a22]">
+
         {icon}
+
       </div>
 
 
-      {/* VALUE */}
+      {/* =================================================
+          VALUE
+      ================================================= */}
 
-      <strong className="block font-['Space_Grotesk'] text-[29px] font-bold leading-none tracking-[-0.04em] text-white">
+      <strong className="block font-['Georgia'] text-[28px] font-bold leading-none text-[#eee8dd]">
         {value}
       </strong>
 
 
-      {/* LABEL */}
+      {/* =================================================
+          LABEL
+      ================================================= */}
 
-      <span className="mt-2 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#696977]">
+      <span className="mt-2 block text-[9px] font-semibold uppercase tracking-[0.11em] text-[#716c65]">
         {label}
       </span>
+
 
     </div>
   );
