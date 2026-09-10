@@ -6,6 +6,13 @@ class RevealedClip(BaseModel):
     audio_url: str
 
 
+class AttemptResponse(BaseModel):
+    attempt_number: int
+    guess: str
+    is_correct: bool
+    score_earned: int = 0
+
+
 class GameResponse(BaseModel):
     game_session_id: int
     chunk_number: int
@@ -23,10 +30,16 @@ class GameResponse(BaseModel):
     # Only returned after the game is completed
     answer: str | None = None
 
-    # Today's game date
+    # Actual game date
     game_date: str | None = None
 
+    # True when playing through Time Machine
     is_time_machine: bool = False
+
+    # All guesses/attempts already made in this game
+    attempts: list[AttemptResponse] = Field(
+        default_factory=list
+    )
 
 
 class GuessRequest(BaseModel):

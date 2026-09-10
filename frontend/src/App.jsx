@@ -19,9 +19,15 @@ import AdminDashboard from "./components/AdminDashboard";
 import {
   BarChart3,
   CalendarClock,
+  CalendarDays,
+  Check,
   Clapperboard,
   CircleHelp,
-  Info,
+  Clock3,
+  RotateCcw,
+  Search,
+  Target,
+  X,
   ShieldAlert,
 } from "lucide-react";
 
@@ -43,7 +49,175 @@ function App() {
   return <PlayerApp />;
 }
 
+/* =========================================================
+   HOW TO PLAY MODAL
+========================================================= */
 
+function HowToPlayModal({ onClose }) {
+  useEffect(() => {
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    document.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+    };
+  }, [onClose]);
+
+
+  const instructions = [
+    {
+      icon: Clapperboard,
+      title: "Daily Movie",
+      description:
+        "One movie is selected for the day. Listen to the audio clue and guess it — everyone plays the same challenge.",
+    },
+    {
+      icon: Target,
+      title: "Five Guesses",
+      description:
+        "You get exactly five submitted guesses. Each wrong guess unlocks an easier audio clue.",
+    },
+    {
+      icon: Search,
+      title: "Search",
+      description:
+        "Type the movie name into the search box and select your answer. Searching never costs a guess — only pressing GUESS does.",
+    },
+    {
+      icon: Clock3,
+      title: "Time Machine",
+      description:
+        "Replay any previous day's challenge. Results are tracked separately.",
+    },
+    {
+      icon: RotateCcw,
+      title: "Daily Reset",
+      description:
+        "A brand new movie arrives every day at 12:00 AM IST.",
+    },
+  ];
+
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8 backdrop-blur-[2px] sm:items-center"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="how-to-play-title"
+        className="relative w-full max-w-[460px] overflow-hidden rounded-[12px] border border-[#4a371c] bg-[#111111] shadow-[0_30px_100px_rgba(0,0,0,0.75)]"
+        onMouseDown={(event) => {
+          event.stopPropagation();
+        }}
+      >
+
+        {/* TOP GOLD ACCENT */}
+
+        <div className="absolute left-0 right-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#d99a22] to-transparent" />
+
+
+        {/* HEADER */}
+
+        <div className="relative flex items-center justify-center px-12 pb-4 pt-5">
+
+          <h2
+            id="how-to-play-title"
+            className="font-['Georgia'] text-[22px] font-bold tracking-[0.01em] text-[#e5a32c]"
+          >
+            HOW TO PLAY
+          </h2>
+
+
+          {/* CLOSE */}
+
+          <button
+            onClick={onClose}
+            aria-label="Close how to play"
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#75541d] bg-[#18140e] text-[#c79532] transition hover:border-[#b57d1f] hover:bg-[#241c10] hover:text-[#edb84d]"
+          >
+            <X
+              size={17}
+              strokeWidth={1.6}
+            />
+          </button>
+
+        </div>
+
+
+        {/* CONTENT */}
+
+        <div className="px-5 pb-6 sm:px-6">
+
+          <div className="space-y-1">
+
+            {instructions.map(
+              ({
+                icon: Icon,
+                title,
+                description,
+              }) => (
+                <div
+                  key={title}
+                  className="flex gap-3 rounded-[9px] px-0 py-2.5"
+                >
+
+                  {/* ICON */}
+
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[#795517] bg-[#241b0d] text-[#d99a22] shadow-[inset_0_0_15px_rgba(190,130,25,0.05)]">
+
+                    <Icon
+                      size={15}
+                      strokeWidth={1.6}
+                    />
+
+                  </div>
+
+
+                  {/* TEXT */}
+
+                  <div className="min-w-0">
+
+                    <h3 className="text-[14px] font-semibold text-[#e3d4b2]">
+                      {title}
+                    </h3>
+
+                    <p className="mt-0.5 text-[12px] leading-[1.55] text-[#8e8a84]">
+                      {description}
+                    </p>
+
+                  </div>
+
+                </div>
+              )
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
 /* =========================================================
    PLAYER APP
 ========================================================= */
@@ -63,6 +237,8 @@ function PlayerApp() {
 
   const [selectedDate, setSelectedDate] =
     useState(null);
+
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
 
   /* =========================================================
@@ -380,31 +556,20 @@ function PlayerApp() {
                 HOW TO PLAY
             ================================================= */}
 
-            <button
-              onClick={() => {
-                /*
-                 * Keep this available for your
-                 * How To Play implementation.
-                 *
-                 * Currently the existing app does
-                 * not have a how-to-play page/modal.
-                 */
-              }}
-              aria-label="How to play"
-              className="flex items-center gap-2 rounded-[11px] border border-transparent px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.03em] text-[#85817c] transition hover:text-[#d1cbc1] max-[600px]:px-2.5"
-            >
+                      <button
+            onClick={() => setShowHowToPlay(true)}
+            aria-label="How to play"
+            className="flex items-center gap-2 rounded-[11px] border border-transparent px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.03em] text-[#85817c] transition hover:text-[#d1cbc1] max-[600px]:px-2.5"
+          >
+            <CircleHelp
+              size={14}
+              strokeWidth={1.7}
+            />
 
-              <CircleHelp
-                size={14}
-                strokeWidth={1.7}
-              />
-
-
-              <span className="max-[520px]:hidden">
-                HOW TO PLAY
-              </span>
-
-            </button>
+            <span className="max-[520px]:hidden">
+              HOW TO PLAY
+            </span>
+          </button>
 
           </nav>
 
@@ -441,6 +606,12 @@ function PlayerApp() {
         )}
 
       </main>
+
+            {showHowToPlay && (
+        <HowToPlayModal
+          onClose={() => setShowHowToPlay(false)}
+        />
+      )}
 
 
       {/* =====================================================

@@ -16,11 +16,15 @@ import {
   Pause,
   Search,
   X,
+  Check,
+  CircleX,
+  Target,
   Share2,
   Link as LinkIcon,
-  Check,
   Sparkles,
   Volume2,
+  RotateCcw,
+  AlertCircle,
 } from "lucide-react";
 
 import {
@@ -170,6 +174,13 @@ function Game({ selectedDate }) {
   const [countdown, setCountdown] =
     useState(getCountdown());
 
+  /*
+   * NEW:
+   * Stores every movie guess made by the player.
+   */
+  const [guesses, setGuesses] =
+    useState([]);
+
 
   /* =========================================================
      LOAD GAME
@@ -190,6 +201,14 @@ function Game({ selectedDate }) {
         : await getTodayGame();
 
       setGame(data);
+
+      /*
+       * If the backend later returns attempts,
+       * restore them automatically.
+       *
+       * For now this safely falls back to [].
+       */
+      setGuesses(data.attempts ?? []);
 
     } catch (err) {
       console.error(err);
@@ -225,10 +244,14 @@ function Game({ selectedDate }) {
   async function handleGuess(event) {
     event.preventDefault();
 
+    const trimmedGuess =
+      guess.trim();
+
     if (
-      !guess.trim() ||
+      !trimmedGuess ||
       submitting ||
-      !game
+      !game ||
+      game.status !== "PLAYING"
     ) {
       return;
     }
@@ -237,10 +260,41 @@ function Game({ selectedDate }) {
       setSubmitting(true);
       setError("");
 
-      const result = await submitGuess(
-        game.game_session_id,
-        guess.trim()
-      );
+      const result =
+        await submitGuess(
+          game.game_session_id,
+          trimmedGuess
+        );
+
+
+      /* =====================================================
+         SAVE THE GUESS
+      ===================================================== */
+
+      setGuesses((previous) => [
+        ...previous,
+
+        {
+          attempt_number:
+            previous.length + 1,
+
+          guess:
+            trimmedGuess,
+
+          is_correct:
+            result.correct === true,
+
+          score_earned:
+            result.score_earned ?? 0,
+
+          skipped: false,
+        },
+      ]);
+
+
+      /* =====================================================
+         UPDATE GAME
+      ===================================================== */
 
       setGame((previous) => ({
         ...previous,
@@ -262,12 +316,14 @@ function Game({ selectedDate }) {
         total_score:
           result.total_score ??
           previous.total_score ??
+          previous.score ??
           0,
 
         answer:
           result.answer ??
           previous.answer,
       }));
+
 
       setGuess("");
 
@@ -286,8 +342,112 @@ function Game({ selectedDate }) {
 
 
   /* =========================================================
-     LOADING
+     SKIP CURRENT CLUE
   ========================================================= */
+
+  async function handleSkip() {
+    if (
+      submitting ||
+      !game ||
+      game.status !== "PLAYING" ||
+      attemptsUsed >= MAX_GUESSES
+    ) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setError("");
+
+      /*
+       * SKIP uses the existing guess endpoint.
+       *
+       * The backend treats this as an incorrect attempt,
+       * so one attempt is consumed and the next clue is
+       * revealed. No score is earned.
+       */
+      const result =
+        await submitGuess(
+          game.game_session_id,
+          "__SKIPPED__"
+        );
+
+
+      /* =====================================================
+         SAVE THE SKIP
+      ===================================================== */
+
+      setGuesses((previous) => [
+        ...previous,
+
+        {
+          attempt_number:
+            previous.length + 1,
+
+          guess:
+            "__SKIPPED__",
+
+          is_correct: false,
+
+          score_earned: 0,
+
+          skipped: true,
+        },
+      ]);
+
+
+      /* =====================================================
+         UPDATE GAME
+      ===================================================== */
+
+      setGame((previous) => ({
+        ...previous,
+
+        ...result,
+
+        chunk_number:
+          result.next_chunk_number ??
+          previous.chunk_number,
+
+        audio_url:
+          result.next_audio_url ??
+          previous.audio_url,
+
+        revealed_clips:
+          result.revealed_clips ??
+          previous.revealed_clips,
+
+        total_score:
+          result.total_score ??
+          previous.total_score ??
+          previous.score ??
+          0,
+
+        answer:
+          result.answer ??
+          previous.answer,
+      }));
+
+
+      setGuess("");
+
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err.message ||
+        "Unable to skip the clue."
+      );
+
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+
+  /* =========================================================
+     LOADING
+  =========================================================
 
   if (loading) {
     return (
@@ -329,7 +489,7 @@ function Game({ selectedDate }) {
         <div className="rounded-[15px] border border-[#503d21] bg-[#151515] p-8 text-center">
 
           <div className="mb-4 flex justify-center">
-            <Clapperboard
+            <AlertCircle
               size={34}
               strokeWidth={1.5}
               className="text-[#e4a32d]"
@@ -346,8 +506,13 @@ function Game({ selectedDate }) {
 
           <button
             onClick={loadGame}
-            className="mt-5 rounded-[9px] border border-[#91661d] bg-[#d89b2e] px-6 py-3 text-[12px] font-bold text-[#171109] transition hover:brightness-110"
+            className="mt-5 inline-flex items-center gap-2 rounded-[9px] border border-[#91661d] bg-[#d89b2e] px-6 py-3 text-[12px] font-bold text-[#171109] transition hover:brightness-110"
           >
+            <RotateCcw
+              size={14}
+              strokeWidth={2}
+            />
+
             TRY AGAIN
           </button>
 
@@ -404,6 +569,7 @@ function Game({ selectedDate }) {
             {
               chunk_number:
                 game.chunk_number ?? 1,
+
               audio_url:
                 game.audio_url,
             },
@@ -501,7 +667,7 @@ function Game({ selectedDate }) {
 
 
         {/* =================================================
-            RESULT STATE
+            RESULT / PLAYING
         ================================================= */}
 
         {isFinished ? (
@@ -515,6 +681,7 @@ function Game({ selectedDate }) {
             formattedDate={formattedDate}
             revealedClips={revealedClips}
             countdown={countdown}
+            guesses={guesses}
           />
 
         ) : (
@@ -528,7 +695,9 @@ function Game({ selectedDate }) {
             setGuess={setGuess}
             submitting={submitting}
             handleGuess={handleGuess}
+            handleSkip={handleSkip}
             error={error}
+            guesses={guesses}
           />
 
         )}
@@ -577,7 +746,9 @@ function PlayingGame({
   setGuess,
   submitting,
   handleGuess,
+  handleSkip,
   error,
+  guesses,
 }) {
   return (
     <div className="mx-auto mt-7 max-w-[594px]">
@@ -594,24 +765,59 @@ function PlayingGame({
           {[1, 2, 3, 4, 5].map(
             (number) => {
 
-              const used =
-                number <= attemptsUsed;
+              const submittedGuess =
+                guesses[number - 1];
+
+              const isWrong =
+                submittedGuess &&
+                submittedGuess.is_correct === false;
+
+              const isCorrect =
+                submittedGuess &&
+                submittedGuess.is_correct === true;
+
 
               return (
                 <div
                   key={number}
                   className={`
+                    flex
                     h-[24px]
                     w-[24px]
+                    items-center
+                    justify-center
                     rounded-full
                     border
+                    transition-all
+                    duration-200
+
                     ${
-                      used
-                        ? "border-[#d89b2d] bg-[#d89b2d]"
+                      isWrong
+                        ? "border-[#a5253c] bg-[#c52845] text-white shadow-[0_0_12px_rgba(197,40,69,0.18)]"
+
+                        : isCorrect
+                        ? "border-[#d89b2d] bg-[#d89b2d] text-[#171109] shadow-[0_0_12px_rgba(216,155,45,0.16)]"
+
                         : "border-[#454545] bg-[#292929]"
                     }
                   `}
-                />
+                >
+
+                  {isWrong && (
+                    <CircleX
+                      size={14}
+                      strokeWidth={2.3}
+                    />
+                  )}
+
+                  {isCorrect && (
+                    <Check
+                      size={14}
+                      strokeWidth={2.6}
+                    />
+                  )}
+
+                </div>
               );
             }
           )}
@@ -624,7 +830,7 @@ function PlayingGame({
           {attemptsRemaining}
 
           <span className="ml-1 text-[11px] uppercase tracking-[0.05em]">
-            Guesses
+            Guesses Remaining
           </span>
 
         </div>
@@ -742,17 +948,27 @@ function PlayingGame({
             }
             className="h-[55px] flex-1 rounded-[12px] border border-[#a8751e] bg-gradient-to-b from-[#e5ad3e] to-[#bd831f] text-[14px] font-bold uppercase tracking-[0.08em] text-[#151008] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-35"
           >
+
             {submitting
               ? "CHECKING..."
               : "GUESS"}
+
           </button>
 
 
           <button
             type="button"
-            className="h-[55px] w-[82px] rounded-[12px] border border-[#795719] bg-transparent text-[13px] font-bold uppercase text-[#e3a52e] transition hover:bg-[#1d170d]"
+            onClick={handleSkip}
+            disabled={
+              submitting ||
+              attemptsRemaining <= 0
+            }
+            aria-label="Skip current audio clue"
+            className="h-[55px] w-[82px] rounded-[12px] border border-[#795719] bg-transparent text-[13px] font-bold uppercase text-[#e3a52e] transition hover:bg-[#1d170d] disabled:cursor-not-allowed disabled:opacity-35"
           >
-            SKIP
+            {submitting
+              ? "..."
+              : "SKIP"}
           </button>
 
         </div>
@@ -773,9 +989,168 @@ function PlayingGame({
       </form>
 
 
+      {/* =================================================
+          NEW — PREVIOUS GUESSES
+      ================================================= */}
+
+      {guesses.length > 0 && (
+        <section className="mt-5">
+
+          <div className="mb-3 flex items-center justify-between">
+
+            <div className="flex items-center gap-2">
+
+              <Target
+                size={13}
+                strokeWidth={1.8}
+                className="text-[#b68a31]"
+              />
+
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#77716a]">
+                Your Guesses
+              </span>
+
+            </div>
+
+            <span className="text-[10px] uppercase tracking-[0.08em] text-[#4f4b46]">
+              {guesses.length}/{MAX_GUESSES}
+            </span>
+
+          </div>
+
+
+          <div className="flex flex-col gap-2">
+
+            {guesses.map(
+              (item, index) => {
+
+                const isCorrect =
+                  item.is_correct === true;
+
+                const attemptNumber =
+                  item.attempt_number ??
+                  index + 1;
+
+
+                return (
+                  <div
+                    key={`${attemptNumber}-${item.guess}`}
+                    className={`
+                      flex
+                      min-h-[44px]
+                      items-center
+                      gap-3
+                      rounded-[11px]
+                      border
+                      px-3.5
+                      transition-all
+
+                      ${
+                        isCorrect
+                          ? "border-[#6d5525] bg-[#18140c]"
+                          : "border-[#292725] bg-[#101010]"
+                      }
+                    `}
+                  >
+
+                    {/* STATUS */}
+
+                    <div
+                      className={`
+                        flex
+                        h-[19px]
+                        w-[19px]
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+
+                        ${
+                          isCorrect
+                            ? "bg-[#d89b2d] text-[#171109]"
+                            : "bg-[#c52845] text-white"
+                        }
+                      `}
+                    >
+
+                      {isCorrect ? (
+                        <Check
+                          size={11}
+                          strokeWidth={2.7}
+                        />
+                      ) : (
+                        <CircleX
+                          size={12}
+                          strokeWidth={2.3}
+                        />
+                      )}
+
+                    </div>
+
+
+                    {/* NUMBER */}
+
+                    <span className="w-[18px] shrink-0 text-[10px] font-bold text-[#55514b]">
+                      {attemptNumber}
+                    </span>
+
+
+                    {/* GUESS */}
+
+                    <span
+                      className={`
+                        min-w-0 flex-1 truncate text-[13px] font-medium
+
+                        ${
+                          isCorrect
+                            ? "text-[#e6c879]"
+                            : item.skipped
+                            ? "italic text-[#6f6a63]"
+                            : "text-[#aaa59d]"
+                        }
+                      `}
+                    >
+                      {item.skipped
+                        ? "Skipped"
+                        : item.guess}
+                    </span>
+
+
+                    {/* SCORE */}
+
+                    {isCorrect && (
+                      <span className="shrink-0 text-[10px] font-bold text-[#dca02d]">
+                        +{item.score_earned ?? 0}
+                      </span>
+                    )}
+
+                  </div>
+                );
+              }
+            )}
+
+          </div>
+
+        </section>
+      )}
+
+
+      {/* =================================================
+          ERROR
+      ================================================= */}
+
       {error && (
-        <div className="mt-4 rounded-[10px] border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-[12px] text-red-300">
-          {error}
+        <div className="mt-4 flex items-center gap-2 rounded-[10px] border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-[12px] text-red-300">
+
+          <AlertCircle
+            size={14}
+            strokeWidth={1.8}
+          />
+
+          <span>
+            {error}
+          </span>
+
         </div>
       )}
 
@@ -828,25 +1203,43 @@ function AudioRow({
       return;
     }
 
+    audio.pause();
+
     audio.src = clip.audio_url;
     audio.preload = "metadata";
+    audio.load();
+
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(false);
+
 
     const handleLoadedMetadata = () => {
-      setDuration(audio.duration || 0);
+      setDuration(
+        Number.isFinite(audio.duration)
+          ? audio.duration
+          : 0
+      );
     };
 
+
     const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
+      setCurrentTime(
+        audio.currentTime
+      );
     };
+
 
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
     };
 
+
     const handlePlay = () => {
       setIsPlaying(true);
     };
+
 
     const handlePause = () => {
       setIsPlaying(false);
@@ -942,6 +1335,7 @@ function AudioRow({
       Number(event.target.value);
 
     audio.currentTime = value;
+
     setCurrentTime(value);
   }
 
@@ -1144,6 +1538,7 @@ function CompletedGame({
   formattedDate,
   revealedClips,
   countdown,
+  guesses,
 }) {
   return (
     <div className="mx-auto mt-7 max-w-[594px]">
@@ -1203,9 +1598,15 @@ function CompletedGame({
           {[1, 2, 3, 4, 5].map(
             (number) => {
 
-              const active =
-                number === attemptsUsed &&
-                isWon;
+              const item =
+                guesses[number - 1];
+
+              const correct =
+                item?.is_correct === true;
+
+              const wrong =
+                item?.is_correct === false;
+
 
               return (
                 <div
@@ -1218,18 +1619,30 @@ function CompletedGame({
                     justify-center
                     rounded-[10px]
                     border
+
                     ${
-                      active
-                        ? "border-[#38bd8a] bg-[#0ca875] text-white shadow-[0_7px_18px_rgba(10,170,115,0.22)]"
+                      correct
+                        ? "border-[#d89b2d] bg-[#d89b2d] text-[#171109]"
+
+                        : wrong
+                        ? "border-[#a5253c] bg-[#c52845] text-white"
+
                         : "border-[#414141] bg-[#242424] text-transparent"
                     }
                   `}
                 >
 
-                  {active && (
+                  {correct && (
                     <Check
                       size={22}
                       strokeWidth={2.5}
+                    />
+                  )}
+
+                  {wrong && (
+                    <CircleX
+                      size={22}
+                      strokeWidth={2.2}
                     />
                   )}
 
@@ -1281,6 +1694,131 @@ function CompletedGame({
         </div>
 
       </section>
+
+
+      {/* =================================================
+          GUESSES
+      ================================================= */}
+
+      {guesses.length > 0 && (
+        <section className="mt-5 rounded-[15px] border border-[#463721] bg-[#151515] p-4">
+
+          <div className="mb-3 flex items-center justify-center gap-2">
+
+            <Target
+              size={13}
+              strokeWidth={1.7}
+              className="text-[#9b752d]"
+            />
+
+            <p className="m-0 text-[10px] uppercase tracking-[0.22em] text-[#77716a]">
+              Your Guesses
+            </p>
+
+          </div>
+
+
+          <div className="flex flex-col gap-2">
+
+            {guesses.map(
+              (item, index) => {
+
+                const isCorrect =
+                  item.is_correct === true;
+
+                return (
+                  <div
+                    key={`${item.attempt_number ?? index}-${item.guess}`}
+                    className={`
+                      flex
+                      min-h-[42px]
+                      items-center
+                      gap-3
+                      rounded-[10px]
+                      border
+                      px-3.5
+
+                      ${
+                        isCorrect
+                          ? "border-[#6d5525] bg-[#18140c]"
+                          : "border-[#292725] bg-[#101010]"
+                      }
+                    `}
+                  >
+
+                    <div
+                      className={`
+                        flex
+                        h-[18px]
+                        w-[18px]
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+
+                        ${
+                          isCorrect
+                            ? "bg-[#d89b2d] text-[#171109]"
+                            : "bg-[#c52845] text-white"
+                        }
+                      `}
+                    >
+
+                      {isCorrect ? (
+                        <Check
+                          size={11}
+                          strokeWidth={2.6}
+                        />
+                      ) : (
+                        <CircleX
+                          size={11}
+                          strokeWidth={2.3}
+                        />
+                      )}
+
+                    </div>
+
+
+                    <span className="w-[18px] text-[10px] font-bold text-[#55514b]">
+                      {item.attempt_number ??
+                        index + 1}
+                    </span>
+
+
+                    <span
+                      className={`
+                        min-w-0 flex-1 truncate text-[12px]
+
+                        ${
+                          isCorrect
+                            ? "text-[#e6c879]"
+                            : item.skipped
+                            ? "italic text-[#6f6a63]"
+                            : "text-[#aaa59d]"
+                        }
+                      `}
+                    >
+                      {item.skipped
+                        ? "Skipped"
+                        : item.guess}
+                    </span>
+
+
+                    {isCorrect && (
+                      <span className="text-[10px] font-bold text-[#dca02d]">
+                        +{item.score_earned ?? 0}
+                      </span>
+                    )}
+
+                  </div>
+                );
+              }
+            )}
+
+          </div>
+
+        </section>
+      )}
 
 
       {/* =================================================
@@ -1466,14 +2004,20 @@ function ShareResult({
 
       <div className="grid grid-cols-2 gap-2.5 max-[500px]:grid-cols-1">
 
+
         {/* X */}
 
         <button
           onClick={shareResult}
           className="flex h-[44px] items-center justify-center gap-2 rounded-[10px] border-0 bg-[#f1f1f1] text-[12px] font-bold text-[#171717] transition hover:brightness-95"
         >
+
           <FaXTwitter size={14} />
-          <span>X / Twitter</span>
+
+          <span>
+            X / Twitter
+          </span>
+
         </button>
 
 
@@ -1483,8 +2027,13 @@ function ShareResult({
           onClick={shareResult}
           className="flex h-[44px] items-center justify-center gap-2 rounded-[10px] border-0 bg-[#09a874] text-[12px] font-bold text-white transition hover:brightness-105"
         >
+
           <FaWhatsapp size={16} />
-          <span>WhatsApp</span>
+
+          <span>
+            WhatsApp
+          </span>
+
         </button>
 
 
@@ -1494,8 +2043,13 @@ function ShareResult({
           onClick={shareResult}
           className="flex h-[44px] items-center justify-center gap-2 rounded-[10px] border-0 bg-[#2867df] text-[12px] font-bold text-white transition hover:brightness-105"
         >
+
           <FaFacebookF size={14} />
-          <span>Facebook</span>
+
+          <span>
+            Facebook
+          </span>
+
         </button>
 
 
@@ -1505,12 +2059,16 @@ function ShareResult({
           onClick={copyResult}
           className="flex h-[44px] items-center justify-center gap-2 rounded-[10px] border border-[#946719] bg-[#281c0a] text-[12px] font-bold text-[#e1a42f] transition hover:bg-[#34240d]"
         >
+
           <LinkIcon
             size={15}
             strokeWidth={1.8}
           />
 
-          <span>Copy Link</span>
+          <span>
+            Copy Link
+          </span>
+
         </button>
 
       </div>
@@ -1522,12 +2080,15 @@ function ShareResult({
         onClick={shareResult}
         className="mt-2.5 flex h-[46px] w-full items-center justify-center gap-2 rounded-[10px] border-0 bg-gradient-to-b from-[#e4ac3c] to-[#c28620] text-[12px] font-bold uppercase tracking-[0.05em] text-[#161108] transition hover:brightness-110"
       >
+
         <Share2
           size={16}
           strokeWidth={1.8}
         />
 
-        <span>SHARE RESULT</span>
+        <span>
+          SHARE RESULT
+        </span>
 
       </button>
 

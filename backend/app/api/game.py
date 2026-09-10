@@ -1,4 +1,4 @@
-from datetime import datetime, timezone , date
+from datetime import datetime, timezone, date
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -27,6 +27,10 @@ IST = ZoneInfo("Asia/Kolkata")
 
 MAX_ATTEMPTS = 5
 
+
+# ============================================================
+# HELPERS
+# ============================================================
 
 def normalize(value: str) -> str:
     return " ".join(
@@ -93,6 +97,37 @@ def get_revealed_clips(
     ]
 
 
+def get_attempts(
+    db: Session,
+    game_session_id: int,
+):
+    """
+    Return all guesses/attempts made for a game session.
+
+    This is used when loading the game again so the
+    frontend can restore the previous guess history.
+    """
+
+    attempts = (
+        db.query(Attempt)
+        .filter(
+            Attempt.game_session_id == game_session_id
+        )
+        .order_by(Attempt.attempt_number)
+        .all()
+    )
+
+    return [
+        {
+            "attempt_number": attempt.attempt_number,
+            "guess": attempt.guess,
+            "is_correct": attempt.is_correct,
+            "score_earned": attempt.score_earned,
+        }
+        for attempt in attempts
+    ]
+
+
 # ============================================================
 # GET TODAY'S GAME
 # ============================================================
@@ -154,6 +189,12 @@ def get_today_game(
         db.commit()
         db.refresh(session)
 
+    # Get existing attempts from database.
+    attempts = get_attempts(
+        db=db,
+        game_session_id=session.id,
+    )
+
     # ========================================================
     # COMPLETED GAME
     # ========================================================
@@ -186,15 +227,15 @@ def get_today_game(
 
             status=session.status,
 
-            # IMPORTANT:
-            # Return the score stored in GameSession.
             total_score=session.score,
 
-            # Return the answer for completed games.
             answer=game.song.movie_name,
 
-            # Return the actual game date.
             game_date=str(game.game_date),
+
+            is_time_machine=False,
+
+            attempts=attempts,
         )
 
     # ========================================================
@@ -247,14 +288,16 @@ def get_today_game(
 
         status=session.status,
 
-        # Current score.
         total_score=session.score,
 
-        # Current game date.
         game_date=str(game.game_date),
 
         # Do not reveal answer while playing.
         answer=None,
+
+        is_time_machine=False,
+
+        attempts=attempts,
     )
 
 
@@ -435,7 +478,7 @@ def guess(
         )
 
     # ========================================================
-    # WRONG GUESS
+    # WRONG GUESS / SKIP
     # REVEAL NEXT CLIP
     # ========================================================
 
@@ -496,6 +539,12 @@ def guess(
         revealed_clips=revealed_clips,
     )
 
+
+# ============================================================
+# GET HISTORICAL GAME
+# TIME MACHINE
+# ============================================================
+
 @router.get(
     "/date/{game_date}",
     response_model=GameResponse,
@@ -507,23 +556,43 @@ def get_game_by_date(
 ):
     today = datetime.now(IST).date()
 
+    # --------------------------------------------------------
+    # Future and today's game are not available here.
+    # --------------------------------------------------------
+
     if game_date >= today:
         raise HTTPException(
             status_code=400,
-            detail="Only previous games are available in Time Machine",
+            detail=(
+                "Only previous games are "
+                "available in Time Machine"
+            ),
         )
+
+    # --------------------------------------------------------
+    # Find scheduled game
+    # --------------------------------------------------------
 
     game = (
         db.query(DailyGame)
-        .filter(DailyGame.game_date == game_date)
+        .filter(
+            DailyGame.game_date == game_date
+        )
         .first()
     )
 
     if not game:
         raise HTTPException(
             status_code=404,
-            detail="No game was scheduled for this date",
+            detail=(
+                "No game was scheduled "
+                "for this date"
+            ),
         )
+
+    # --------------------------------------------------------
+    # Find existing Time Machine session
+    # --------------------------------------------------------
 
     session = (
         db.query(GameSession)
@@ -534,21 +603,43 @@ def get_game_by_date(
         .first()
     )
 
+    # --------------------------------------------------------
+    # Create Time Machine session
+    # --------------------------------------------------------
+
     if not session:
         session = GameSession(
             user_id=current_user.id,
             daily_game_id=game.id,
+
             current_chunk=1,
+
             attempts_used=0,
+
             score=0,
+
             status="PLAYING",
+
+            # IMPORTANT:
+            # Time Machine games NEVER affect stats.
             stats_eligible=False,
+
             started_at=datetime.now(timezone.utc),
         )
 
         db.add(session)
         db.commit()
         db.refresh(session)
+
+    # Get saved attempts.
+    attempts = get_attempts(
+        db=db,
+        game_session_id=session.id,
+    )
+
+    # --------------------------------------------------------
+    # Revealed clips
+    # --------------------------------------------------------
 
     revealed_clips = get_revealed_clips(
         db=db,
@@ -560,30 +651,52 @@ def get_game_by_date(
         ),
     )
 
+    # ========================================================
+    # COMPLETED TIME MACHINE GAME
+    # ========================================================
+
     if session.status != "PLAYING":
+
         return GameResponse(
             game_session_id=session.id,
+
             chunk_number=session.current_chunk,
+
             audio_url=(
                 revealed_clips[0]["audio_url"]
                 if revealed_clips
                 else ""
             ),
+
             revealed_clips=revealed_clips,
+
             attempts_used=session.attempts_used,
+
             attempts_remaining=0,
+
             status=session.status,
+
             total_score=session.score,
+
             answer=game.song.movie_name,
+
             game_date=str(game.game_date),
+
             is_time_machine=True,
+
+            attempts=attempts,
         )
+
+    # ========================================================
+    # ACTIVE TIME MACHINE GAME
+    # ========================================================
 
     clip = (
         db.query(SongClip)
         .filter(
             SongClip.song_id == game.song_id,
-            SongClip.chunk_number == session.current_chunk,
+            SongClip.chunk_number
+            == session.current_chunk,
         )
         .first()
     )
@@ -591,18 +704,40 @@ def get_game_by_date(
     if not clip:
         raise HTTPException(
             status_code=500,
-            detail=f"Missing chunk {session.current_chunk}",
+            detail=(
+                f"Missing chunk "
+                f"{session.current_chunk}"
+            ),
         )
 
     return GameResponse(
         game_session_id=session.id,
+
         chunk_number=session.current_chunk,
-        audio_url=build_audio_url(clip.audio_url),
+
+        audio_url=build_audio_url(
+            clip.audio_url
+        ),
+
         revealed_clips=revealed_clips,
+
         attempts_used=session.attempts_used,
-        attempts_remaining=MAX_ATTEMPTS - session.attempts_used,
+
+        attempts_remaining=(
+            MAX_ATTEMPTS
+            - session.attempts_used
+        ),
+
         status=session.status,
+
         total_score=session.score,
+
         game_date=str(game.game_date),
+
+        # Do not reveal answer while playing.
+        answer=None,
+
         is_time_machine=True,
+
+        attempts=attempts,
     )
