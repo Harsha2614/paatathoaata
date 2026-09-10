@@ -1,0 +1,125 @@
+# ==========================================
+# GuessTheSong - Root .gitignore
+# ==========================================
+
+# ------------------------------------------
+# Environment variables / secrets
+# ------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ------------------------------------------
+# Python
+# ------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Packaging
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ------------------------------------------
+# FastAPI / Uvicorn
+# ------------------------------------------
+*.log
+
+# ------------------------------------------
+# PostgreSQL / local database files
+# ------------------------------------------
+*.sql
+*.dump
+*.backup
+
+# ------------------------------------------
+# Uploaded audio files
+# IMPORTANT:
+# These are local development uploads and
+# should NOT be committed to Git.
+# ------------------------------------------
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ------------------------------------------
+# Node.js / React / Vite
+# ------------------------------------------
+node_modules/
+
+# Vite build output
+frontend/dist/
+frontend/build/
+
+# Vite cache
+frontend/.vite/
+
+# ------------------------------------------
+# npm / yarn / pnpm
+# ------------------------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------------------
+# IDEs / Editors
+# ------------------------------------------
+.vscode/
+.idea/
+
+# VS Code local history
+.history/
+
+# ------------------------------------------
+# Operating system files
+# ------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ------------------------------------------
+# Windows temporary files
+# ------------------------------------------
+*.tmp
+*.temp
+
+# ------------------------------------------
+# Logs
+# ------------------------------------------
+logs/
+*.log
+
+# ------------------------------------------
+# Alembic
+# ------------------------------------------
+# Keep migrations committed!
+# Do NOT ignore:
+# backend/alembic/
+
+# ------------------------------------------
+# Testing / temporary files
+# ------------------------------------------
+.pytest_cache/
+.tox/
+.nox/
+
+# ------------------------------------------
+# Generated files
+# ------------------------------------------
+*.generated.*
