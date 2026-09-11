@@ -296,7 +296,7 @@ function PlayerApp() {
 
 
           <h1 className="font-['Georgia'] text-[30px] font-bold tracking-[-0.02em] text-[#e5a32c]">
-            Cine Clue
+            PAATA THO AATA
           </h1>
 
 
@@ -339,7 +339,7 @@ function PlayerApp() {
 
 
           <h1 className="font-['Georgia'] text-[27px] font-bold text-[#e6a52e]">
-            CINE CLUE
+            PAATA THO AATA
           </h1>
 
 
@@ -400,7 +400,7 @@ function PlayerApp() {
 
             <div className="flex flex-col items-center leading-none">
               <span className="font-['Georgia'] text-[22px] font-bold tracking-[0.06em] text-[#dca02d] max-[600px]:text-[18px]">
-                CINE CLUE
+                PAATA THO AATA
               </span>
 
               <span className="mt-[3px] font-['Georgia'] text-[8px] font-bold tracking-[0.06em] text-[#dca02d] max-[600px]:text-[8px]">
@@ -638,7 +638,7 @@ function PlayerApp() {
             />
 
             <span>
-              CINE CLUE
+              PAATA THO AATA
               
             </span>
 
@@ -706,7 +706,7 @@ function PlayerApp() {
           {/* COPYRIGHT */}
 
           <p className="mt-5 text-[10px] text-[#4e4a45]">
-            © 2026 CINE CLUE. All rights reserved.
+            © 2026  PAATA THO AATA. All rights reserved.
           </p>
 
         </div>
@@ -784,7 +784,7 @@ function AdminApp() {
 
 
           <h1 className="font-['Georgia'] text-[28px] font-bold text-[#e5a32c]">
-            CINE CLUE
+            PAATA THO AATA
           </h1>
 
 

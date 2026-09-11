@@ -36,6 +36,95 @@ import {
 
 const MAX_GUESSES = 5;
 
+/*
+ * MOVIE SEARCH LIST
+ * Replace this list with the same movie titles available
+ * in your backend/database.
+ */
+const MOVIES = [
+  {
+    title: "Baahubali: The Beginning",
+    year: 2015,
+  },
+  {
+    title: "Baahubali: The Conclusion",
+    year: 2017,
+  },
+  {
+    title: "RRR",
+    year: 2022,
+  },
+  {
+    title: "Pushpa: The Rise",
+    year: 2021,
+  },
+  {
+    title: "Pushpa 2: The Rule",
+    year: 2024,
+  },
+  {
+    title: "Arjun Reddy",
+    year: 2017,
+  },
+  {
+    title: "Jersey",
+    year: 2019,
+  },
+  {
+    title: "Eega",
+    year: 2012,
+  },
+  {
+    title: "Magadheera",
+    year: 2009,
+  },
+  {
+    title: "Ala Vaikunthapurramuloo",
+    year: 2020,
+  },
+  {
+    title: "Athadu",
+    year: 2005,
+  },
+  {
+    title: "Pokiri",
+    year: 2006,
+  },
+  {
+    title: "Gabbar Singh",
+    year: 2012,
+  },
+  {
+    title: "Businessman",
+    year: 2012,
+  },
+  {
+    title: "Julayi",
+    year: 2012,
+  },
+  {
+    title: "Rangasthalam",
+    year: 2018,
+  },
+  {
+    title: "Sye",
+    year: 2004,
+  },
+  {
+    title: "Khaleja",
+    year: 2010,
+  },
+  {
+    title: "Manam",
+    year: 2014,
+  },
+  {
+    title: "Agent Sai Srinivasa Athreya",
+    year: 2019,
+  },
+];
+
+
 const SCORE_BY_ATTEMPT = {
   1: 100,
   2: 80,
@@ -43,6 +132,43 @@ const SCORE_BY_ATTEMPT = {
   4: 40,
   5: 20,
 };
+
+/*
+ * Keep every revealed clue visible.
+ * If the backend returns the full revealed_clips array, use it.
+ * If it only returns the next clue, append that clue to the
+ * already revealed clues.
+ */
+function buildRevealedClips(previousClips = [], result = {}, previousGame = {}) {
+  if (Array.isArray(result.revealed_clips) && result.revealed_clips.length > 0) {
+    return result.revealed_clips;
+  }
+
+  if (result.next_audio_url) {
+    const nextChunkNumber =
+      result.next_chunk_number ??
+      previousGame.chunk_number ??
+      previousClips.length + 1;
+
+    const alreadyExists = previousClips.some(
+      (clip) => clip.chunk_number === nextChunkNumber
+    );
+
+    if (alreadyExists) {
+      return previousClips;
+    }
+
+    return [
+      ...previousClips,
+      {
+        chunk_number: nextChunkNumber,
+        audio_url: result.next_audio_url,
+      },
+    ];
+  }
+
+  return previousClips;
+}
 
 
 /* =========================================================
@@ -165,6 +291,9 @@ function Game({ selectedDate }) {
   const [guess, setGuess] =
     useState("");
 
+  const [selectedMovie, setSelectedMovie] =
+    useState("");
+
   const [submitting, setSubmitting] =
     useState(false);
 
@@ -256,6 +385,16 @@ function Game({ selectedDate }) {
       return;
     }
 
+    const movieExists = MOVIES.some(
+      (movie) =>
+        movie.title.toLowerCase() === trimmedGuess.toLowerCase()
+    );
+
+    if (!movieExists || selectedMovie !== trimmedGuess) {
+      setError("Please select a movie from the list.");
+      return;
+    }
+
     try {
       setSubmitting(true);
       setError("");
@@ -309,9 +448,11 @@ function Game({ selectedDate }) {
           result.next_audio_url ??
           previous.audio_url,
 
-        revealed_clips:
-          result.revealed_clips ??
-          previous.revealed_clips,
+        revealed_clips: buildRevealedClips(
+          previous.revealed_clips ?? [],
+          result,
+          previous
+        ),
 
         total_score:
           result.total_score ??
@@ -326,6 +467,7 @@ function Game({ selectedDate }) {
 
 
       setGuess("");
+      setSelectedMovie("");
 
     } catch (err) {
       console.error(err);
@@ -413,9 +555,11 @@ function Game({ selectedDate }) {
           result.next_audio_url ??
           previous.audio_url,
 
-        revealed_clips:
-          result.revealed_clips ??
-          previous.revealed_clips,
+        revealed_clips: buildRevealedClips(
+          previous.revealed_clips ?? [],
+          result,
+          previous
+        ),
 
         total_score:
           result.total_score ??
@@ -430,6 +574,7 @@ function Game({ selectedDate }) {
 
 
       setGuess("");
+      setSelectedMovie("");
 
     } catch (err) {
       console.error(err);
@@ -464,7 +609,7 @@ function Game({ selectedDate }) {
           </div>
 
           <h1 className="font-['Georgia'] text-[28px] font-bold text-[#e4a32d]">
-            CINE CLUE
+            PAATA THO AATA
           </h1>
 
           <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-[#68645f]">
@@ -606,7 +751,7 @@ function Game({ selectedDate }) {
 
 
           <h1 className="mt-2 font-['Georgia'] text-[54px] font-bold leading-none tracking-[-0.045em] text-[#e5a32d] max-[700px]:text-[39px]">
-            CINE CLUE
+            PAATA THO AATA
           </h1>
 
 
@@ -693,7 +838,10 @@ function Game({ selectedDate }) {
             revealedClips={revealedClips}
             guess={guess}
             setGuess={setGuess}
+            selectedMovie={selectedMovie}
+            setSelectedMovie={setSelectedMovie}
             submitting={submitting}
+            setError={setError}
             handleGuess={handleGuess}
             handleSkip={handleSkip}
             error={error}
@@ -744,7 +892,10 @@ function PlayingGame({
   revealedClips,
   guess,
   setGuess,
+  selectedMovie,
+  setSelectedMovie,
   submitting,
+  setError,
   handleGuess,
   handleSkip,
   error,
@@ -851,29 +1002,30 @@ function PlayingGame({
         />
 
         <p className="m-0 text-center text-[12px] text-[#aaa39a]">
-          Listen to the clip — each wrong guess unlocks an easier one
+          Listen to the clues — each wrong guess unlocks the next one
         </p>
 
       </div>
 
 
       {/* =================================================
-          CURRENT CLUE
+          REVEALED CLUES
+          Each new clue is added below the previous clue.
+          Previous clues are never removed.
       ================================================= */}
 
-      <div className="rounded-[15px] border border-[#493821] bg-[#171717] p-4">
-
-        <AudioRow
-          clip={
-            revealedClips[
-              revealedClips.length - 1
-            ]
-          }
-          index={
-            revealedClips.length
-          }
-        />
-
+      <div className="flex flex-col gap-3">
+        {revealedClips.map((clip, index) => (
+          <div
+            key={clip.chunk_number ?? index}
+            className="rounded-[15px] border border-[#493821] bg-[#171717] p-4"
+          >
+            <AudioRow
+              clip={clip}
+              index={index + 1}
+            />
+          </div>
+        ))}
       </div>
 
 
@@ -911,20 +1063,27 @@ function PlayingGame({
           <input
             type="text"
             value={guess}
-            onChange={(event) =>
-              setGuess(event.target.value)
-            }
+            onChange={(event) => {
+              const value = event.target.value;
+
+              setGuess(value);
+              setSelectedMovie("");
+              setError("");
+            }}
             placeholder="Search for a movie..."
             disabled={submitting}
             autoComplete="off"
             className="h-[62px] w-full rounded-[13px] border border-[#755316] bg-[#0e0e0e] pl-12 pr-12 text-[16px] text-[#eee8df] outline-none transition placeholder:text-[#67625c] focus:border-[#c58b21] focus:ring-1 focus:ring-[#c58b21]/30"
           />
 
-
           {guess && (
             <button
               type="button"
-              onClick={() => setGuess("")}
+              onClick={() => {
+                setGuess("");
+                setSelectedMovie("");
+                setError("");
+              }}
               aria-label="Clear search"
               className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center justify-center border-0 bg-transparent text-[#6e6a64] transition hover:text-[#d7d0c5]"
             >
@@ -934,6 +1093,16 @@ function PlayingGame({
               />
             </button>
           )}
+
+          <MovieDropdown
+            guess={guess}
+            selectedMovie={selectedMovie}
+            onSelect={(movie) => {
+              setGuess(movie);
+              setSelectedMovie(movie);
+              setError("");
+            }}
+          />
 
         </div>
 
@@ -976,13 +1145,18 @@ function PlayingGame({
 
         {guess && (
           <p className="mt-3 text-center text-[10px] text-[#6f6961]">
-
-            Selected:{" "}
-
-            <span className="text-[#e0a32d]">
-              {guess}
-            </span>
-
+            {selectedMovie ? (
+              <>
+                Selected:{" "}
+                <span className="text-[#e0a32d]">
+                  {selectedMovie}
+                </span>
+              </>
+            ) : (
+              <span className="text-[#8a837a]">
+                Select a movie from the list
+              </span>
+            )}
           </p>
         )}
 
@@ -1160,6 +1334,72 @@ function PlayingGame({
 
 
 /* =========================================================
+   MOVIE DROPDOWN
+========================================================= */
+
+function MovieDropdown({
+  guess,
+  selectedMovie,
+  onSelect,
+}) {
+  const searchTerm = guess.trim().toLowerCase();
+
+  if (!searchTerm || selectedMovie) {
+    return null;
+  }
+
+  const matches = MOVIES
+  .filter((movie) =>
+    movie.title.toLowerCase().includes(searchTerm)
+  )
+  .slice(0, 8);
+
+  return (
+    <div className="absolute left-0 right-0 top-[68px] z-50 overflow-hidden rounded-[12px] border border-[#4d3b20] bg-[#111111] shadow-[0_15px_40px_rgba(0,0,0,0.55)]">
+      {matches.length > 0 ? (
+        <div className="max-h-[240px] overflow-y-auto py-1">
+          {matches.map((movie) => (
+              <button
+                key={movie.title}
+                type="button"
+                onClick={() => onSelect(movie.title)}
+                className="mx-1 my-1 flex h-[48px] w-[calc(100%-8px)] items-center justify-between rounded-[11px] border border-[#3a3328] bg-[#1a1917] px-4 text-left transition hover:border-[#755316] hover:bg-[#211d17]"
+              >
+                <span className="truncate text-[13px] font-semibold text-[#ddd7ce]">
+                  {movie.title}
+                </span>
+
+                <span className="ml-4 shrink-0 text-[12px] font-medium text-[#dca02d]">
+                  {movie.year}
+                </span>
+              </button>
+            ))}
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 px-4 py-4">
+          <CircleX
+            size={17}
+            strokeWidth={1.7}
+            className="shrink-0 text-[#c52845]"
+          />
+
+          <div>
+            <p className="m-0 text-[12px] font-semibold text-[#d7d0c7]">
+              Movie not found
+            </p>
+
+            <p className="mt-1 text-[10px] text-[#716b64]">
+              Try another movie title
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/* =========================================================
    AUDIO ROW
 ========================================================= */
 
@@ -1181,11 +1421,11 @@ function AudioRow({
 
 
   const difficulty = [
-    "VERY DIFFICULT",
-    "SLIGHTLY EASIER",
+    "DEEP CUT",
+    "TRICKY",
     "RECOGNIZABLE",
-    "FAMOUS SCENE",
-    "VERY RECOGNIZABLE",
+    "EASY GUESS",
+    "INSTANT CLASSIC"
   ][
     Math.min(
       Math.max(index - 1, 0),
@@ -1540,6 +1780,41 @@ function CompletedGame({
   countdown,
   guesses,
 }) {
+  /*
+   * RESULT MESSAGE
+   * The message changes depending on which clue/guess
+   * the player used to identify the movie.
+   */
+  const resultMessages = {
+    1: {
+      title: "CINEMA MASTARU! 🎬👑",
+      subtitle: "You knew it from the very first clue!",
+    },
+    2: {
+      title: "SUPER GUESS! 🔥",
+      subtitle: "You got it with just one extra clue!",
+    },
+    3: {
+      title: "NICE ONE! 🎯",
+      subtitle: "You figured it out before the final clue!",
+    },
+    4: {
+      title: "WELL PLAYED! 👏",
+      subtitle: "That was a close one!",
+    },
+    5: {
+      title: "JUST IN TIME! ⏱️",
+      subtitle: "You cracked it on the final clue!",
+    },
+  };
+
+  const resultMessage = isWon
+    ? resultMessages[Math.min(Math.max(attemptsUsed, 1), MAX_GUESSES)]
+    : {
+        title: "SO CLOSE!",
+        subtitle: "Better luck on the next movie!",
+      };
+
   return (
     <div className="mx-auto mt-7 max-w-[594px]">
 
@@ -1571,9 +1846,7 @@ function CompletedGame({
 
           <h2 className="font-['Georgia'] text-[30px] font-bold text-[#e5a32d] max-[600px]:text-[25px]">
 
-            {isWon
-              ? "ABSOLUTE CINEMA!"
-              : "SO CLOSE!"}
+            {resultMessage.title}
 
           </h2>
 
@@ -1582,9 +1855,7 @@ function CompletedGame({
 
         <p className="mt-1 text-[13px] text-[#88827a]">
 
-          {isWon
-            ? "You guessed today's movie!"
-            : "Better luck on the next movie!"}
+          {resultMessage.subtitle}
 
         </p>
 
@@ -1955,7 +2226,7 @@ function ShareResult({
   totalScore,
 }) {
   const text =
-    `CINE CLUE\n` +
+    `PAATA THO AATA\n` +
     `${attemptsUsed}/5 guesses · ${totalScore} points\n` +
     `Can you beat me?`;
 
@@ -1979,7 +2250,7 @@ function ShareResult({
 
       try {
         await navigator.share({
-          title: "CINE CLUE",
+          title: "PAATA THO AATA",
           text,
         });
 
